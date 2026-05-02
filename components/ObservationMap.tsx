@@ -58,7 +58,14 @@ function FlyToFirst({ obs }: { obs: PublicObservation[] }) {
   return null;
 }
 
-export function ObservationMap() {
+export interface MapFilters {
+  /** Si está vacío o no definido, mostrar todos los niveles */
+  levels?: Set<InfestationLevel>;
+  /** Si está vacío, mostrar todos los municipios */
+  municipality?: string | null;
+}
+
+export function ObservationMap({ filters }: { filters?: MapFilters }) {
   const [observations, setObservations] = useState<PublicObservation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +83,8 @@ export function ObservationMap() {
       cancelled = true;
     };
   }, []);
+
+  const visible = applyFilters(observations, filters);
 
   if (error) {
     return (
@@ -101,8 +110,8 @@ export function ObservationMap() {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         maxZoom={19}
       />
-      {observations.length > 0 && <FlyToFirst obs={observations} />}
-      {observations.map((o) => (
+      {visible.length > 0 && <FlyToFirst obs={visible} />}
+      {visible.map((o) => (
         <Marker
           key={o.id}
           position={[o.lat, o.lng]}
@@ -142,4 +151,21 @@ export function ObservationMap() {
       ))}
     </MapContainer>
   );
+}
+
+function applyFilters(
+  obs: PublicObservation[] | null,
+  filters: MapFilters | undefined,
+): PublicObservation[] {
+  if (!obs) return [];
+  if (!filters) return obs;
+  return obs.filter((o) => {
+    if (filters.levels && filters.levels.size > 0 && !filters.levels.has(o.level)) {
+      return false;
+    }
+    if (filters.municipality && o.municipality !== filters.municipality) {
+      return false;
+    }
+    return true;
+  });
 }

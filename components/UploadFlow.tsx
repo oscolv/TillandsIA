@@ -13,7 +13,16 @@ import { ClassificationResultView } from "./ClassificationResult";
 import type { ClassificationResult } from "@/lib/types";
 import { compressImage } from "@/lib/compress-image";
 import { fetchWithRetry } from "@/lib/fetch-with-retry";
-import { ArrowRight, Info, Loader2, MapPin, Camera, CheckCircle2 } from "lucide-react";
+import { share } from "@/lib/share";
+import {
+  ArrowRight,
+  Info,
+  Loader2,
+  MapPin,
+  Camera,
+  CheckCircle2,
+  Share2,
+} from "lucide-react";
 
 type Step = "intro" | "photo" | "location" | "classifying" | "result" | "submitting" | "done";
 
@@ -307,14 +316,33 @@ export function UploadFlow() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-emerald-700">
-              <CheckCircle2 className="h-6 w-6" />
+              <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
               ¡Observación publicada!
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">
               Te llevamos al mapa para que veas tu pin...
             </p>
+            {state.classification && (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  const lvl = state.classification!.level;
+                  const lbl = state.classification!.label;
+                  const method = await share({
+                    title: "TillandsIA — Observación publicada",
+                    text: `Acabo de mapear un árbol con infestación ${lbl} (nivel ${lvl}) de heno motita en el Valle del Mezquital. ¡Ayúdanos mapeando más árboles!`,
+                    url: `${window.location.origin}/mapa`,
+                  });
+                  if (method === "clipboard") toast.success("Enlace copiado");
+                }}
+                className="gap-2"
+              >
+                <Share2 className="h-4 w-4" aria-hidden="true" />
+                Compartir
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
