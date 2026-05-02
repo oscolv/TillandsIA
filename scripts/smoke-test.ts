@@ -29,7 +29,8 @@ async function main() {
   console.log(`[smoke] imagen generada: ${jpeg.length} bytes`);
 
   const fd = new FormData();
-  fd.append("photo", new Blob([jpeg], { type: "image/jpeg" }), "tree.jpg");
+  // Buffer es un Uint8Array — cast explícito para satisfacer al tipo BlobPart de Node 22
+  fd.append("photo", new Blob([new Uint8Array(jpeg)], { type: "image/jpeg" }), "tree.jpg");
 
   console.log(`[smoke] POST ${url}`);
   const t0 = Date.now();

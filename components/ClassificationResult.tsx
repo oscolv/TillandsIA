@@ -67,7 +67,11 @@ export function ClassificationResultView({
   const cfg = LEVEL_CONFIG[result.level];
 
   return (
-    <Card className={`w-full ${cfg.bg} border-2`}>
+    <Card
+      className={`w-full ${cfg.bg} border-2`}
+      aria-live="polite"
+      aria-atomic="true"
+    >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-3">

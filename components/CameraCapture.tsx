@@ -47,11 +47,11 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
-            alt="Vista previa de la foto"
+            alt="Vista previa de la foto del árbol que vas a enviar"
             className="max-h-[60vh] w-auto rounded-lg border border-border shadow-sm"
           />
           <Button variant="outline" onClick={reset} className="gap-2">
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
             Tomar otra foto
           </Button>
         </div>
@@ -61,7 +61,7 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
           onClick={() => inputRef.current?.click()}
           className="gap-2 h-14 text-base"
         >
-          <Camera className="h-5 w-5" />
+          <Camera className="h-5 w-5" aria-hidden="true" />
           Tomar foto del árbol
         </Button>
       )}

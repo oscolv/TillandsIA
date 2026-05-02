@@ -11,6 +11,8 @@ import { CameraCapture } from "./CameraCapture";
 import { LocationCapture, type Coords } from "./LocationCapture";
 import { ClassificationResultView } from "./ClassificationResult";
 import type { ClassificationResult } from "@/lib/types";
+import { compressImage } from "@/lib/compress-image";
+import { fetchWithRetry } from "@/lib/fetch-with-retry";
 import { ArrowRight, Info, Loader2, MapPin, Camera, CheckCircle2 } from "lucide-react";
 
 type Step = "intro" | "photo" | "location" | "classifying" | "result" | "submitting" | "done";
@@ -86,17 +88,36 @@ export function UploadFlow() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [progress, setProgress] = useState(0);
 
-  async function classify() {
-    if (!state.photoFile || !state.coords) return;
+  async function classify(file: File) {
     dispatch({ type: "CLASSIFYING" });
-    setProgress(10);
+    setProgress(5);
+
+    let photoBlob: Blob;
+    try {
+      const compressed = await compressImage(file);
+      photoBlob = compressed.blob;
+      if (compressed.compressedSize < compressed.originalSize) {
+        const savedKb = Math.round(
+          (compressed.originalSize - compressed.compressedSize) / 1024,
+        );
+        console.info(
+          `[upload] comprimida ${Math.round(compressed.originalSize / 1024)} KB → ${Math.round(
+            compressed.compressedSize / 1024,
+          )} KB (${compressed.width}×${compressed.height}, -${savedKb} KB)`,
+        );
+      }
+    } catch (err) {
+      console.warn("[upload] compresión falló, enviando original:", err);
+      photoBlob = file;
+    }
+    setProgress(20);
 
     const formData = new FormData();
-    formData.append("photo", state.photoFile);
+    formData.append("photo", photoBlob, "photo.jpg");
 
     try {
-      setProgress(30);
-      const res = await fetch("/api/classify", {
+      setProgress(35);
+      const res = await fetchWithRetry("/api/classify", {
         method: "POST",
         body: formData,
       });
@@ -141,7 +162,7 @@ export function UploadFlow() {
     dispatch({ type: "SUBMITTING" });
 
     try {
-      const res = await fetch("/api/observations", {
+      const res = await fetchWithRetry("/api/observations", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -233,8 +254,11 @@ export function UploadFlow() {
             <LocationCapture
               onLocate={(coords) => {
                 dispatch({ type: "LOCATED", coords });
-                // arranca clasificación automáticamente
-                setTimeout(classify, 0);
+                // arranca clasificación automáticamente — pasamos el File
+                // por argumento (no por state) para evitar closure stale.
+                if (state.photoFile) {
+                  void classify(state.photoFile);
+                }
               }}
             />
           </CardContent>
@@ -242,15 +266,18 @@ export function UploadFlow() {
       )}
 
       {state.step === "classifying" && (
-        <Card>
+        <Card aria-busy="true" aria-live="polite">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
               Analizando la foto...
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Progress value={progress} />
+            <Progress
+              value={progress}
+              aria-label={`Progreso del análisis: ${progress}%`}
+            />
             <p className="text-sm text-muted-foreground">
               El modelo está identificando heno motita y estimando el nivel de
               infestación.
@@ -311,36 +338,50 @@ function Stepper({ step }: { step: Step }) {
   ];
   const idx = stepIndex(step);
   return (
-    <ol className="flex items-center justify-between text-xs sm:text-sm">
-      {steps.map((s, i) => (
-        <li key={s.id} className="flex-1 flex items-center">
-          <span
-            className={`flex h-7 w-7 items-center justify-center rounded-full border-2 font-semibold ${
-              i <= idx
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-muted-foreground/30 text-muted-foreground"
-            }`}
-            aria-current={i === idx ? "step" : undefined}
-          >
-            {i + 1}
-          </span>
-          <span
-            className={`ml-2 ${
-              i <= idx ? "font-medium" : "text-muted-foreground"
-            }`}
-          >
-            {s.label}
-          </span>
-          {i < steps.length - 1 && (
-            <div
-              className={`flex-1 h-0.5 mx-2 ${
-                i < idx ? "bg-primary" : "bg-muted-foreground/20"
-              }`}
-            />
-          )}
-        </li>
-      ))}
-    </ol>
+    <nav aria-label="Progreso del envío de observación">
+      <ol className="flex items-center justify-between text-xs sm:text-sm">
+        {steps.map((s, i) => {
+          const isCurrent = i === idx;
+          const isComplete = i < idx;
+          const status = isCurrent
+            ? "actual"
+            : isComplete
+              ? "completado"
+              : "pendiente";
+          return (
+            <li key={s.id} className="flex-1 flex items-center">
+              <span
+                className={`flex h-7 w-7 items-center justify-center rounded-full border-2 font-semibold ${
+                  i <= idx
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-muted-foreground/30 text-muted-foreground"
+                }`}
+                aria-current={isCurrent ? "step" : undefined}
+                aria-label={`Paso ${i + 1} de ${steps.length}: ${s.label} (${status})`}
+              >
+                <span aria-hidden="true">{i + 1}</span>
+              </span>
+              <span
+                className={`ml-2 ${
+                  i <= idx ? "font-medium" : "text-muted-foreground"
+                }`}
+                aria-hidden="true"
+              >
+                {s.label}
+              </span>
+              {i < steps.length - 1 && (
+                <div
+                  className={`flex-1 h-0.5 mx-2 ${
+                    i < idx ? "bg-primary" : "bg-muted-foreground/20"
+                  }`}
+                  aria-hidden="true"
+                />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }
 
