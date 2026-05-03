@@ -8,6 +8,13 @@
       "when": 1777761182161,
       "tag": "0000_dark_hemingway",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782000000000,
+      "tag": "0001_human_review_and_image_hash",
+      "breakpoints": true
     }
   ]
 }

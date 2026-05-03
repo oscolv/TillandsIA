@@ -46,16 +46,36 @@ export interface ClassificationResult {
 
 /**
  * Payload del cliente para registrar una observación tras confirmar el resultado.
- * El servidor vuelve a validar y rellena `municipality`, `season_window`,
- * `classifier_version`, `model_version`, `ip_hash`.
+ *
+ * El cliente NO envía la classification: la lee el servidor del cache de Redis
+ * usando `imageHash` como llave. El servidor recalcula sha256 sobre `photoBase64`
+ * y verifica que coincide con `imageHash`, con lo que la classification queda
+ * atada criptográficamente a la foto que el modelo realmente vio.
+ *
+ * El servidor rellena: `municipality`, `season_window`, `classifier_version`,
+ * `model_version`, `ip_hash`, y `human_review_status = "pending"`.
  */
 export interface NewObservationPayload {
   lat: number;
   lng: number;
   accuracy: number | null;
-  photoBase64: string; // data URL del cliente, sanitizado en server antes de subir
-  classification: ClassificationResult;
+  photoBase64: string;
+  imageHash: string; // sha256 hex de la imagen sanitizada, devuelto por /api/classify
 }
+
+/**
+ * Estado de revisión humana para una observación.
+ *  - pending: aún no revisada
+ *  - accepted: revisor confirmó la etiqueta del modelo
+ *  - corrected: revisor cambió la etiqueta (`human_level` tendrá el valor correcto)
+ *  - rejected: foto inválida (líquenes, no es heno, fuera de zona, etc.)
+ */
+export type HumanReviewStatus = "pending" | "accepted" | "corrected" | "rejected";
+
+/**
+ * Split de entrenamiento al exportar el dataset etiquetado.
+ */
+export type TrainingSplit = "train" | "val" | "test";
 
 /**
  * Forma pública de una observación (la que devuelve GET /api/observations).

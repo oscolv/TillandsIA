@@ -71,6 +71,18 @@ export const observations = pgTable(
     classifierVersion: text("classifier_version").notNull(),
     modelVersion: text("model_version").notNull(),
     ipHash: text("ip_hash").notNull(),
+
+    // Integridad: sha256 hex de la imagen sanitizada que el modelo vio.
+    // Nullable para registros legacy anteriores a la migración.
+    imageHash: text("image_hash"),
+
+    // Revisión humana — convierte el dataset de etiquetas IA en uno corregido.
+    // Estados: pending | accepted | corrected | rejected.
+    humanReviewStatus: text("human_review_status").notNull().default("pending"),
+    humanLevel: smallint("human_level"),
+    reviewerNotes: text("reviewer_notes"),
+    // 'train' | 'val' | 'test' — asignado al exportar el dataset etiquetado.
+    trainingSplit: text("training_split"),
   },
   (table) => [
     index("observations_lat_lng_idx").on(table.lat, table.lng),
@@ -79,6 +91,11 @@ export const observations = pgTable(
     index("observations_flagged_idx")
       .on(table.flagged)
       .where(sql`${table.flagged} = true`),
+    index("observations_image_hash_idx").on(table.imageHash),
+    index("observations_review_idx").on(
+      table.humanReviewStatus,
+      table.createdAt.desc(),
+    ),
   ],
 );
 

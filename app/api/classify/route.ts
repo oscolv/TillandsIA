@@ -7,6 +7,7 @@ import {
 import { classifyImage } from "@/lib/classify";
 import { hashIP } from "@/lib/hash-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { cacheClassification, hashImage } from "@/lib/classification-cache";
 
 export const runtime = "nodejs"; // sharp no corre en edge
 export const maxDuration = 30; // OpenAI vision puede tardar 5-15 s
@@ -146,12 +147,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // 6. Devolver resultado + foto sanitizada en base64 para que el cliente
-    // confirme con POST /api/observations.
+    // 6. Cachear classification atada al sha256 de la imagen sanitizada.
+    //    `/api/observations` validará que el cliente envíe ese mismo hash
+    //    junto con la imagen y leerá la classification de aquí — el cliente
+    //    nunca es autoridad sobre level/confidence.
+    const imageHash = hashImage(sanitized);
+    try {
+      await cacheClassification(imageHash, result);
+    } catch (err) {
+      console.error("classification-cache error:", err);
+      return NextResponse.json(
+        { error: "Configuración del servidor incompleta" },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json({
       rejected: false,
       classification: result,
       photoBase64: sanitized.toString("base64"),
+      imageHash,
     });
   } catch (err) {
     console.error("classify error:", err);

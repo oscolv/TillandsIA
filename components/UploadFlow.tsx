@@ -33,6 +33,7 @@ interface FlowState {
   coords: Coords | null;
   classification: ClassificationResult | null;
   photoBase64: string | null; // sanitizado por el server, devuelto en /api/classify
+  imageHash: string | null; // sha256 de la foto sanitizada — lo emite /api/classify
   error: string | null;
 }
 
@@ -40,7 +41,12 @@ type Action =
   | { type: "PHOTO_TAKEN"; file: File; previewUrl: string }
   | { type: "LOCATED"; coords: Coords }
   | { type: "CLASSIFYING" }
-  | { type: "CLASSIFIED"; classification: ClassificationResult; photoBase64: string }
+  | {
+      type: "CLASSIFIED";
+      classification: ClassificationResult;
+      photoBase64: string;
+      imageHash: string;
+    }
   | { type: "SUBMITTING" }
   | { type: "DONE" }
   | { type: "ERROR"; error: string }
@@ -54,6 +60,7 @@ const initialState: FlowState = {
   coords: null,
   classification: null,
   photoBase64: null,
+  imageHash: null,
   error: null,
 };
 
@@ -78,6 +85,7 @@ function reducer(s: FlowState, a: Action): FlowState {
         step: "result",
         classification: a.classification,
         photoBase64: a.photoBase64,
+        imageHash: a.imageHash,
       };
     case "SUBMITTING":
       return { ...s, step: "submitting" };
@@ -154,10 +162,18 @@ export function UploadFlow() {
         return;
       }
 
+      if (typeof data.imageHash !== "string") {
+        const msg = "Respuesta del servidor incompleta. Intenta de nuevo.";
+        dispatch({ type: "ERROR", error: msg });
+        toast.error(msg);
+        return;
+      }
+
       dispatch({
         type: "CLASSIFIED",
         classification: data.classification,
         photoBase64: data.photoBase64,
+        imageHash: data.imageHash,
       });
     } catch {
       const msg = "Sin conexión. Verifica tu red e intenta de nuevo.";
@@ -167,7 +183,14 @@ export function UploadFlow() {
   }
 
   async function confirm() {
-    if (!state.classification || !state.coords || !state.photoBase64) return;
+    if (
+      !state.classification ||
+      !state.coords ||
+      !state.photoBase64 ||
+      !state.imageHash
+    ) {
+      return;
+    }
     dispatch({ type: "SUBMITTING" });
 
     try {
@@ -179,7 +202,7 @@ export function UploadFlow() {
           lng: state.coords.lng,
           accuracy: state.coords.accuracy,
           photoBase64: state.photoBase64,
-          classification: state.classification,
+          imageHash: state.imageHash,
         }),
       });
       const data = await res.json();

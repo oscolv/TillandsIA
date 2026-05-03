@@ -10,6 +10,10 @@ import {
   CLASSIFIER_VERSION,
   MODEL_VERSION,
 } from "@/lib/classify";
+import {
+  getCachedClassification,
+  hashImage,
+} from "@/lib/classification-cache";
 import type { FlagReason, InfestationLevel, PublicObservation } from "@/lib/types";
 import { desc, eq, gte, sql } from "drizzle-orm";
 import { LEVEL_LABELS } from "@/lib/types";
@@ -18,36 +22,30 @@ export const runtime = "nodejs";
 export const maxDuration = 15;
 export const dynamic = "force-dynamic";
 
+/**
+ * sha256 hex tiene 64 chars. Strict para evitar payloads malformados.
+ */
 const NewObservationSchema = z.object({
   lat: z.number().finite(),
   lng: z.number().finite(),
   accuracy: z.number().finite().nullable(),
   photoBase64: z.string().min(1),
-  classification: z.object({
-    level: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
-    label: z.string(),
-    confidence: z.number(),
-    tree_species: z.string().nullable(),
-    tree_species_common: z.string().nullable(),
-    ai_notes: z.string().nullable(),
-    infestation_active: z.boolean().nullable(),
-    branch_dieback: z.boolean(),
-    photo_angle: z.enum(["canopy", "trunk", "mixed", "insufficient"]),
-    has_human_face: z.boolean(),
-    rejection_reason: z.string().nullable(),
-    flag_reasons: z.array(
-      z.enum(["out_of_bbox", "low_confidence", "non_target_host", "post_treatment_appearance"]),
-    ),
-  }),
+  imageHash: z.string().regex(/^[a-f0-9]{64}$/, "imageHash debe ser sha256 hex"),
 });
 
 /**
  * POST /api/observations — guarda la observación tras confirmación del usuario.
  *
+ * Integridad classification ↔ imagen:
+ *  - El cliente NO envía level/confidence/etc. Solo `imageHash` + `photoBase64`.
+ *  - El servidor recalcula sha256(photoBase64) y verifica que coincide con `imageHash`.
+ *  - El servidor lee la classification del cache de Redis usando `imageHash`.
+ *  - Si el cache expiró (TTL 15 min) → 410 y el usuario debe volver a clasificar.
+ *
  * Defensa en profundidad:
- *  - Re-valida coordenadas contra bbox global (no confía en el cliente)
- *  - Re-aplica rate limit (independiente de /api/classify)
- *  - Re-rechaza si has_human_face o rejection_reason (no debería llegar aquí)
+ *  - Re-valida coordenadas contra bbox global
+ *  - Re-aplica rate limit
+ *  - Re-rechaza si has_human_face o rejection_reason
  *  - Calcula municipality, season_window server-side
  */
 export async function POST(req: Request) {
@@ -83,27 +81,10 @@ export async function POST(req: Request) {
     );
   }
 
-  // Defensa en profundidad: rechazos
-  if (payload.classification.has_human_face || payload.classification.rejection_reason) {
-    return NextResponse.json(
-      { error: "Esta foto fue rechazada y no se puede publicar." },
-      { status: 422 },
-    );
-  }
-
   // Validar coordenadas globales
   const coordsErr = validateCoords(payload.lat, payload.lng);
   if (coordsErr) {
     return NextResponse.json({ error: coordsErr }, { status: 400 });
-  }
-
-  // Acumular flags (incluye out_of_bbox calculado server-side)
-  const flag_reasons: FlagReason[] = [...payload.classification.flag_reasons];
-  let flagged = flag_reasons.length > 0;
-
-  if (!isInsideMezquital(payload.lat, payload.lng)) {
-    if (!flag_reasons.includes("out_of_bbox")) flag_reasons.push("out_of_bbox");
-    flagged = true;
   }
 
   // Decode base64 → buffer
@@ -113,6 +94,54 @@ export async function POST(req: Request) {
     if (photoBuf.length === 0) throw new Error("buffer vacío");
   } catch {
     return NextResponse.json({ error: "Foto base64 inválida" }, { status: 400 });
+  }
+
+  // Verificar que el imageHash declarado por el cliente realmente corresponde a la foto.
+  // Si no coincide, el cliente está intentando montar una classification sobre otra imagen.
+  const expectedHash = hashImage(photoBuf);
+  if (expectedHash !== payload.imageHash) {
+    return NextResponse.json(
+      { error: "El hash de la imagen no corresponde con la foto enviada." },
+      { status: 400 },
+    );
+  }
+
+  // Leer la classification real desde el cache (es la del servidor, no del cliente).
+  let classification;
+  try {
+    classification = await getCachedClassification(payload.imageHash);
+  } catch (err) {
+    console.error("classification-cache read error:", err);
+    return NextResponse.json(
+      { error: "Configuración del servidor incompleta" },
+      { status: 500 },
+    );
+  }
+  if (!classification) {
+    return NextResponse.json(
+      {
+        error:
+          "La sesión de clasificación expiró o no existe. Toma la foto de nuevo.",
+      },
+      { status: 410 },
+    );
+  }
+
+  // Defensa en profundidad: rechazos cacheados nunca deberían llegar aquí, pero por si acaso.
+  if (classification.has_human_face || classification.rejection_reason) {
+    return NextResponse.json(
+      { error: "Esta foto fue rechazada y no se puede publicar." },
+      { status: 422 },
+    );
+  }
+
+  // Acumular flags (incluye out_of_bbox calculado server-side)
+  const flag_reasons: FlagReason[] = [...classification.flag_reasons];
+  let flagged = flag_reasons.length > 0;
+
+  if (!isInsideMezquital(payload.lat, payload.lng)) {
+    if (!flag_reasons.includes("out_of_bbox")) flag_reasons.push("out_of_bbox");
+    flagged = true;
   }
 
   // Subir a Blob
@@ -141,15 +170,15 @@ export async function POST(req: Request) {
         lng: payload.lng,
         accuracy: payload.accuracy,
         photoUrl: photo_url,
-        level: payload.classification.level,
-        label: payload.classification.label,
-        confidence: payload.classification.confidence,
-        treeSpecies: payload.classification.tree_species,
-        treeSpeciesCommon: payload.classification.tree_species_common,
-        aiNotes: payload.classification.ai_notes,
-        infestationActive: payload.classification.infestation_active,
-        branchDieback: payload.classification.branch_dieback,
-        photoAngle: payload.classification.photo_angle,
+        level: classification.level,
+        label: classification.label,
+        confidence: classification.confidence,
+        treeSpecies: classification.tree_species,
+        treeSpeciesCommon: classification.tree_species_common,
+        aiNotes: classification.ai_notes,
+        infestationActive: classification.infestation_active,
+        branchDieback: classification.branch_dieback,
+        photoAngle: classification.photo_angle,
         municipality,
         seasonWindow: season_window,
         flagged,
@@ -157,6 +186,7 @@ export async function POST(req: Request) {
         classifierVersion: CLASSIFIER_VERSION,
         modelVersion: MODEL_VERSION,
         ipHash: identifier,
+        imageHash: payload.imageHash,
       })
       .returning({ id: observations.id, createdAt: observations.createdAt });
 
