@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CameraCapture } from "./CameraCapture";
 import { LocationCapture, type Coords } from "./LocationCapture";
 import { ClassificationResultView } from "./ClassificationResult";
@@ -16,7 +15,6 @@ import { fetchWithRetry } from "@/lib/fetch-with-retry";
 import { share } from "@/lib/share";
 import {
   ArrowRight,
-  Info,
   Loader2,
   MapPin,
   Camera,
@@ -230,21 +228,21 @@ export function UploadFlow() {
       {state.step === "intro" && (
         <Card className="card-editorial">
           <CardHeader>
+            <span className="badge-science">Empezar</span>
             <CardTitle>Bienvenido</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">
-              Ayúdanos a mapear el heno motita en el Valle del Mezquital.
-              Solo necesitas tomar una foto del árbol completo (incluyendo el
-              dosel) y compartir tu ubicación.
+            <p className="text-[0.95rem] leading-relaxed text-[color:var(--tinta)]">
+              Ayúdanos a mapear el heno motita en el Valle del Mezquital. Solo
+              necesitas tomar una foto del árbol completo (incluyendo el dosel)
+              y compartir tu ubicación.
             </p>
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertTitle>Privacidad</AlertTitle>
-              <AlertDescription>
+            <aside className="nota-campo">
+              <span className="nota-titulo">Privacidad</span>
+              <p className="text-[0.92rem] leading-relaxed text-[color:var(--tinta)]">
                 Sin registro ni cookies. No tomes fotos con personas.
-              </AlertDescription>
-            </Alert>
+              </p>
+            </aside>
             <Button
               size="lg"
               onClick={() => dispatch({ type: "GO_TO_PHOTO" })}
@@ -300,9 +298,10 @@ export function UploadFlow() {
       {state.step === "classifying" && (
         <Card className="card-editorial" aria-busy="true" aria-live="polite">
           <CardHeader>
+            <span className="badge-science">Análisis</span>
             <CardTitle className="flex items-center gap-2">
-              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-              Analizando la foto...
+              <Loader2 className="h-5 w-5 animate-spin text-[color:var(--mezquite-oscuro)]" aria-hidden="true" />
+              Analizando la foto…
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -310,7 +309,7 @@ export function UploadFlow() {
               value={progress}
               aria-label={`Progreso del análisis: ${progress}%`}
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-[0.92rem] leading-relaxed text-[color:var(--corteza)]">
               El modelo está identificando heno motita y estimando el nivel de
               infestación.
             </p>
@@ -328,9 +327,9 @@ export function UploadFlow() {
 
       {state.step === "submitting" && (
         <Card className="card-editorial">
-          <CardContent className="pt-6 flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Publicando observación...</span>
+          <CardContent className="pt-6 flex items-center gap-3 text-[color:var(--tinta)]">
+            <Loader2 className="h-5 w-5 animate-spin text-[color:var(--mezquite-oscuro)]" />
+            <span>Publicando observación…</span>
           </CardContent>
         </Card>
       )}
@@ -338,14 +337,15 @@ export function UploadFlow() {
       {state.step === "done" && (
         <Card className="card-editorial">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-[color:var(--green-m)]">
+            <span className="badge-science success !text-[color:var(--mezquite-oscuro)]">Confirmado</span>
+            <CardTitle className="flex items-center gap-2 text-[color:var(--mezquite-oscuro)]">
               <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
               ¡Observación publicada!
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">
-              Te llevamos al mapa para que veas tu pin...
+            <p className="text-[0.92rem] leading-relaxed text-[color:var(--corteza)]">
+              Te llevamos al mapa para que veas tu pin…
             </p>
             {state.classification && (
               <Button
@@ -390,7 +390,7 @@ function Stepper({ step }: { step: Step }) {
   const idx = stepIndex(step);
   return (
     <nav aria-label="Progreso del envío de observación">
-      <ol className="flex items-center justify-between text-xs sm:text-sm">
+      <ol className="flex items-center justify-between font-mono text-[0.7rem] uppercase tracking-[0.06em] sm:text-[0.74rem]">
         {steps.map((s, i) => {
           const isCurrent = i === idx;
           const isComplete = i < idx;
@@ -399,13 +399,14 @@ function Stepper({ step }: { step: Step }) {
             : isComplete
               ? "completado"
               : "pendiente";
+          const filled = i <= idx;
           return (
-            <li key={s.id} className="flex-1 flex items-center">
+            <li key={s.id} className="flex flex-1 items-center">
               <span
-                className={`flex h-7 w-7 items-center justify-center rounded-full border-2 font-semibold ${
-                  i <= idx
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-muted-foreground/30 text-muted-foreground"
+                className={`flex h-7 w-7 items-center justify-center border-2 font-mono text-[0.78rem] font-semibold ${
+                  filled
+                    ? "border-[color:var(--tinta)] bg-[color:var(--tinta)] text-[color:var(--papel)]"
+                    : "border-[color:var(--caliza)] bg-[color:var(--papel)] text-[color:var(--corteza)]"
                 }`}
                 aria-current={isCurrent ? "step" : undefined}
                 aria-label={`Paso ${i + 1} de ${steps.length}: ${s.label} (${status})`}
@@ -414,7 +415,7 @@ function Stepper({ step }: { step: Step }) {
               </span>
               <span
                 className={`ml-2 ${
-                  i <= idx ? "font-medium" : "text-muted-foreground"
+                  filled ? "text-[color:var(--tinta)]" : "text-[color:var(--corteza)]"
                 }`}
                 aria-hidden="true"
               >
@@ -422,8 +423,8 @@ function Stepper({ step }: { step: Step }) {
               </span>
               {i < steps.length - 1 && (
                 <div
-                  className={`flex-1 h-0.5 mx-2 ${
-                    i < idx ? "bg-primary" : "bg-muted-foreground/20"
+                  className={`mx-3 h-px flex-1 ${
+                    i < idx ? "bg-[color:var(--tinta)]" : "bg-[color:var(--caliza)]"
                   }`}
                   aria-hidden="true"
                 />

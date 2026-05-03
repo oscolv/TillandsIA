@@ -76,19 +76,22 @@ export function ExportButton({ exportable }: Props) {
         {busy ? "Generando ZIP…" : "Descargar ZIP Roboflow"}
       </Button>
       {exportable > 0 && !busy && !error && !lastSummary && (
-        <span className="text-[11px] text-[color:var(--ink-m)]">
+        <span className="font-mono text-[0.66rem] uppercase tracking-[0.06em] text-[color:var(--corteza)]">
           {exportable} observaciones listas
         </span>
       )}
       {lastSummary && (
-        <span className="text-[11px] text-[color:var(--ink-m)]">
+        <span className="font-mono text-[0.66rem] uppercase tracking-[0.06em] text-[color:var(--mezquite-oscuro)]">
           ✓ {lastSummary.total} fotos · train={lastSummary.bySplit.train} valid=
           {lastSummary.bySplit.valid} test={lastSummary.bySplit.test}
           {lastSummary.failed > 0 && ` (${lastSummary.failed} fallidas)`}
         </span>
       )}
       {error && (
-        <span className="text-[11px] text-destructive" role="alert">
+        <span
+          className="font-mono text-[0.7rem] text-[color:var(--rojo-alerta)]"
+          role="alert"
+        >
           {error}
         </span>
       )}

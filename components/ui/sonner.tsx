@@ -1,15 +1,12 @@
 "use client"
 
-import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="light"
       className="toaster group"
       icons={{
         success: (
@@ -30,10 +27,20 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       style={
         {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          "--normal-bg": "var(--papel)",
+          "--normal-text": "var(--tinta)",
+          "--normal-border": "var(--caliza)",
+          "--success-bg": "var(--papel-alt)",
+          "--success-text": "var(--mezquite-oscuro)",
+          "--success-border": "var(--mezquite-oscuro)",
+          "--warning-bg": "var(--papel-alt)",
+          "--warning-text": "var(--terracota)",
+          "--warning-border": "var(--terracota)",
+          "--error-bg": "var(--rojo-alerta-bg)",
+          "--error-text": "var(--rojo-alerta)",
+          "--error-border": "var(--rojo-alerta)",
+          "--border-radius": "0",
+          fontFamily: "var(--font-inter), system-ui, sans-serif",
         } as React.CSSProperties
       }
       toastOptions={{

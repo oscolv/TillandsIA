@@ -1,50 +1,40 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import type { ClassificationResult as Result } from "@/lib/types";
 import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 
 const LEVEL_CONFIG: Record<
   number,
   {
-    color: string;
-    bg: string;
+    accent: string;
     icon: string;
     description: string;
   }
 > = {
   0: {
-    color: "text-emerald-700",
-    bg: "bg-emerald-50 border-emerald-200",
+    accent: "var(--mezquite-oscuro)",
     icon: "○",
     description: "No se detecta heno motita en el árbol.",
   },
   1: {
-    color: "text-lime-700",
-    bg: "bg-lime-50 border-lime-200",
+    accent: "#5A8F32",
     icon: "◔",
     description: "Infestación leve, entre 1 y 25% de las ramas.",
   },
   2: {
-    color: "text-yellow-700",
-    bg: "bg-yellow-50 border-yellow-200",
+    accent: "var(--heno-seco)",
     icon: "◑",
     description: "Infestación moderada, entre 25 y 50% de las ramas.",
   },
   3: {
-    color: "text-orange-700",
-    bg: "bg-orange-50 border-orange-200",
+    accent: "var(--terracota)",
     icon: "◕",
     description:
       "Infestación severa: 50–75%. Es el umbral crítico de mortalidad de brotes en mezquite.",
   },
   4: {
-    color: "text-red-700",
-    bg: "bg-red-50 border-red-200",
+    accent: "var(--rojo-alerta)",
     icon: "●",
     description:
       "Infestación muy severa: más del 75%. Este es un árbol fuente que dispersa semillas a sus vecinos.",
@@ -67,85 +57,99 @@ export function ClassificationResultView({
   const cfg = LEVEL_CONFIG[result.level];
 
   return (
-    <Card
-      className={`w-full ${cfg.bg} border-2`}
+    <article
+      className={`field-card level-${result.level}`}
       aria-live="polite"
       aria-atomic="true"
     >
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-3">
-            <span className={`text-4xl ${cfg.color}`} aria-hidden>
-              {cfg.icon}
-            </span>
-            <span>
-              <span className="block text-2xl font-bold">
-                Nivel {result.level} — {result.label}
-              </span>
-              <span className="block text-xs text-muted-foreground font-normal">
-                Confianza: {Math.round(result.confidence * 100)}%
-              </span>
-            </span>
+      <span className="badge-science !mb-3 !pb-1">Resultado del análisis</span>
+      <header className="flex items-center gap-3 pb-3 border-b border-[color:var(--caliza)]">
+        <span
+          className="font-serif text-4xl"
+          style={{ color: cfg.accent }}
+          aria-hidden
+        >
+          {cfg.icon}
+        </span>
+        <div>
+          <h2 className="text-[1.35rem] font-semibold leading-tight text-[color:var(--tinta)]">
+            Nivel {result.level} — {result.label}
+          </h2>
+          <span className="font-mono text-[0.74rem] uppercase tracking-[0.06em] text-[color:var(--corteza)]">
+            Confianza: {Math.round(result.confidence * 100)}%
           </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <p className="text-sm">{cfg.description}</p>
+        </div>
+      </header>
+
+      <div className="flex flex-col gap-4 pt-4">
+        <p className="text-[0.95rem] leading-relaxed text-[color:var(--tinta)]">
+          {cfg.description}
+        </p>
 
         {result.tree_species_common && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Especie:</span>
-            <Badge variant="secondary">{result.tree_species_common}</Badge>
-            {result.tree_species && (
-              <span className="text-xs italic text-muted-foreground">
-                {result.tree_species}
-              </span>
-            )}
-          </div>
+          <dl className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-[0.88rem]">
+            <dt className="font-mono text-[0.7rem] uppercase tracking-[0.08em] text-[color:var(--corteza)] pt-1">
+              Especie
+            </dt>
+            <dd className="text-[color:var(--tinta)]">
+              <span className="mini-tag">{result.tree_species_common}</span>
+              {result.tree_species && (
+                <em className="ml-2 text-[0.84rem] text-[color:var(--corteza)]">
+                  {result.tree_species}
+                </em>
+              )}
+            </dd>
+          </dl>
         )}
 
         {result.ai_notes && (
-          <p className="text-sm text-muted-foreground italic">
+          <p className="text-[0.88rem] italic text-[color:var(--corteza)]">
             {result.ai_notes}
           </p>
         )}
 
         {result.level >= 3 && (
-          <Alert className="border-orange-300 bg-orange-100">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Árbol fuente potencial</AlertTitle>
-            <AlertDescription>
+          <aside className="nota-campo warning">
+            <span className="nota-titulo flex items-center gap-2">
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+              Árbol fuente potencial
+            </span>
+            <p className="text-[0.92rem] leading-relaxed text-[color:var(--tinta)]">
               Los árboles con &gt;50% de cobertura producen miles de semillas
-              que infectan a los árboles vecinos. Considera reportar a
-              CONAFOR o al programa municipal de Tula de Allende.
-            </AlertDescription>
-          </Alert>
+              que infectan a los árboles vecinos. Considera reportar a CONAFOR
+              o al programa municipal de Tula de Allende.
+            </p>
+          </aside>
         )}
 
         {result.branch_dieback && (
-          <Alert variant="default">
-            <Info className="h-4 w-4" />
-            <AlertTitle>Daño avanzado visible</AlertTitle>
-            <AlertDescription>
+          <aside className="nota-campo">
+            <span className="nota-titulo flex items-center gap-2">
+              <Info className="h-3.5 w-3.5" aria-hidden="true" />
+              Daño avanzado visible
+            </span>
+            <p className="text-[0.92rem] leading-relaxed text-[color:var(--tinta)]">
               Se detectaron ramas muertas — señal de parasitismo avanzado.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </aside>
         )}
 
         {result.flag_reasons.includes("post_treatment_appearance") && (
-          <Alert variant="default">
-            <Info className="h-4 w-4" />
-            <AlertTitle>Posible tratamiento previo</AlertTitle>
-            <AlertDescription>
+          <aside className="nota-campo">
+            <span className="nota-titulo flex items-center gap-2">
+              <Info className="h-3.5 w-3.5" aria-hidden="true" />
+              Posible tratamiento previo
+            </span>
+            <p className="text-[0.92rem] leading-relaxed text-[color:var(--tinta)]">
               Los cúmulos se ven café-secos, lo que sugiere fumigación previa.
               El musgo muerto puede persistir 18 meses a 10 años antes de caer.
-            </AlertDescription>
-          </Alert>
+            </p>
+          </aside>
         )}
 
-        <Separator />
+        <hr className="divider" aria-hidden="true" />
 
-        <p className="text-xs text-muted-foreground">
+        <p className="font-mono text-[0.7rem] uppercase tracking-[0.05em] text-[color:var(--corteza)]">
           La clasificación es automática y debe validarse en campo para
           decisiones de manejo.
         </p>
@@ -158,7 +162,7 @@ export function ClassificationResultView({
             size="lg"
           >
             <CheckCircle2 className="h-5 w-5" />
-            {submitting ? "Publicando..." : "Confirmar y publicar"}
+            {submitting ? "Publicando…" : "Confirmar y publicar"}
           </Button>
           <Button
             variant="outline"
@@ -169,7 +173,7 @@ export function ClassificationResultView({
             Descartar
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </article>
   );
 }

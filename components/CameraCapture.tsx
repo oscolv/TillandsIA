@@ -48,7 +48,7 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
           <img
             src={previewUrl}
             alt="Vista previa de la foto del árbol que vas a enviar"
-            className="max-h-[60vh] w-auto rounded-lg border border-border shadow-sm"
+            className="max-h-[60vh] w-auto border border-[color:var(--caliza)]"
           />
           <Button variant="outline" onClick={reset} className="gap-2">
             <RotateCcw className="h-4 w-4" aria-hidden="true" />

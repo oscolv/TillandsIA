@@ -63,7 +63,7 @@ export function ReviewQueue({ initialItems, initialCursor, status }: Props) {
 
   if (items.length === 0) {
     return (
-      <p className="rounded-md border border-dashed border-[color:var(--rule)] p-6 text-center text-sm text-[color:var(--ink-m)]">
+      <p className="border border-dashed border-[color:var(--caliza)] bg-[color:var(--papel-alt)] p-6 text-center font-mono text-[0.78rem] uppercase tracking-[0.06em] text-[color:var(--corteza)]">
         No hay observaciones en este estado.
       </p>
     );
@@ -76,7 +76,10 @@ export function ReviewQueue({ initialItems, initialCursor, status }: Props) {
       ))}
 
       {error && (
-        <p className="text-xs text-destructive" role="alert">
+        <p
+          className="font-mono text-[0.78rem] text-[color:var(--rojo-alerta)]"
+          role="alert"
+        >
           {error}
         </p>
       )}
@@ -91,7 +94,7 @@ export function ReviewQueue({ initialItems, initialCursor, status }: Props) {
           {loading ? "Cargando…" : "Cargar más"}
         </Button>
       ) : items.length >= 20 ? (
-        <p className="text-center text-xs text-[color:var(--ink-m)]">
+        <p className="text-center font-mono text-[0.7rem] uppercase tracking-[0.06em] text-[color:var(--corteza)]">
           Fin de la cola.
         </p>
       ) : null}

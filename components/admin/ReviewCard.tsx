@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   LEVEL_LABELS,
   type HumanReviewStatus,
@@ -63,22 +62,37 @@ export function ReviewCard({ item, onReviewed }: Props) {
   const reviewedBadge = (() => {
     switch (item.human_review_status) {
       case "accepted":
-        return <Badge className="bg-green-600 text-white">Aceptada</Badge>;
+        return <span className="mini-tag success">Aceptada</span>;
       case "corrected":
         return (
-          <Badge className="bg-amber-600 text-white">
+          <span className="mini-tag warning">
             Corregida → nivel {item.human_level}
-          </Badge>
+          </span>
         );
       case "rejected":
-        return <Badge variant="destructive">Rechazada</Badge>;
+        return <span className="mini-tag danger">Rechazada</span>;
       default:
-        return <Badge variant="outline">Pendiente</Badge>;
+        return <span className="mini-tag">Pendiente</span>;
+    }
+  })();
+
+  const stateClass = (() => {
+    switch (item.human_review_status) {
+      case "accepted":
+        return "border-l-[3px] border-l-[color:var(--mezquite-oscuro)]";
+      case "corrected":
+        return "border-l-[3px] border-l-[color:var(--terracota)]";
+      case "rejected":
+        return "border-l-[3px] border-l-[color:var(--rojo-alerta)]";
+      default:
+        return "border-l-[3px] border-l-[color:var(--caliza)]";
     }
   })();
 
   return (
-    <article className="overflow-hidden rounded-lg border border-[color:var(--rule)] bg-background shadow-sm">
+    <article
+      className={`overflow-hidden border border-[color:var(--caliza)] bg-[color:var(--papel)] ${stateClass}`}
+    >
       <div className="grid gap-0 sm:grid-cols-[280px_1fr]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -89,52 +103,67 @@ export function ReviewCard({ item, onReviewed }: Props) {
         />
 
         <div className="flex flex-col gap-3 p-4">
-          <header className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--ink-m)]">
+          <header className="flex flex-wrap items-center gap-2">
             {reviewedBadge}
-            <Badge variant="outline">
-              Modelo: nivel {item.level} · {item.label}
-            </Badge>
-            <Badge variant="outline">conf {confidencePct}</Badge>
+            <span className="mini-tag">
+              Modelo · nivel {item.level} · {item.label}
+            </span>
+            <span className="mini-tag">conf {confidencePct}</span>
             {item.flagged && (
-              <Badge variant="destructive">flag: {item.flag_reasons.join(", ")}</Badge>
+              <span className="mini-tag danger">
+                flag: {item.flag_reasons.join(", ")}
+              </span>
             )}
             {item.image_hash == null && (
-              <Badge variant="outline">legacy (sin hash)</Badge>
+              <span className="mini-tag">legacy (sin hash)</span>
             )}
           </header>
 
-          <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-[color:var(--ink-m)]">
-            <dt>Especie</dt>
-            <dd className="text-foreground">
+          <dl className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-[0.82rem]">
+            <dt className="font-mono text-[0.7rem] uppercase tracking-[0.05em] text-[color:var(--corteza)]">
+              Especie
+            </dt>
+            <dd className="text-[color:var(--tinta)]">
               {item.tree_species_common ?? "—"}{" "}
               {item.tree_species && (
-                <em className="text-[color:var(--ink-m)]">({item.tree_species})</em>
+                <em className="text-[color:var(--corteza)]">
+                  ({item.tree_species})
+                </em>
               )}
             </dd>
-            <dt>Municipio</dt>
-            <dd className="text-foreground">{item.municipality ?? "—"}</dd>
-            <dt>Coordenadas</dt>
-            <dd>
+            <dt className="font-mono text-[0.7rem] uppercase tracking-[0.05em] text-[color:var(--corteza)]">
+              Municipio
+            </dt>
+            <dd className="text-[color:var(--tinta)]">
+              {item.municipality ?? "—"}
+            </dd>
+            <dt className="font-mono text-[0.7rem] uppercase tracking-[0.05em] text-[color:var(--corteza)]">
+              Coordenadas
+            </dt>
+            <dd className="text-[color:var(--tinta)]">
               <a
                 href={`https://www.google.com/maps?q=${item.lat},${item.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline"
               >
                 {item.lat.toFixed(5)}, {item.lng.toFixed(5)}
               </a>{" "}
               {item.accuracy != null && (
-                <span className="text-[color:var(--ink-m)]">
+                <span className="text-[color:var(--corteza)]">
                   (±{Math.round(item.accuracy)} m)
                 </span>
               )}
             </dd>
-            <dt>Fecha</dt>
-            <dd>{new Date(item.created_at).toLocaleString("es-MX")}</dd>
+            <dt className="font-mono text-[0.7rem] uppercase tracking-[0.05em] text-[color:var(--corteza)]">
+              Fecha
+            </dt>
+            <dd className="text-[color:var(--tinta)]">
+              {new Date(item.created_at).toLocaleString("es-MX")}
+            </dd>
           </dl>
 
           {item.ai_notes && (
-            <p className="rounded border-l-2 border-[color:var(--ochre)] bg-muted/40 px-2 py-1 text-xs italic">
+            <p className="border-l-2 border-[color:var(--heno-seco)] bg-[color:var(--papel-alt)] px-2.5 py-1.5 text-[0.85rem] italic text-[color:var(--tinta)]">
               {item.ai_notes}
             </p>
           )}
@@ -169,20 +198,18 @@ export function ReviewCard({ item, onReviewed }: Props) {
           )}
 
           {mode === "correct" && (
-            <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 p-2">
-              <label className="text-xs font-medium">Nivel correcto</label>
-              <div className="flex flex-wrap gap-1">
+            <div className="flex flex-col gap-2 border-l-[3px] border-l-[color:var(--terracota)] border-y border-r border-[color:var(--caliza)] bg-[color:var(--papel-alt)] p-3">
+              <label className="font-mono text-[0.7rem] uppercase tracking-[0.06em] text-[color:var(--corteza)]">
+                Nivel correcto
+              </label>
+              <div className="flex flex-wrap gap-1.5">
                 {([0, 1, 2, 3, 4] as InfestationLevel[]).map((lv) => (
                   <button
                     key={lv}
                     type="button"
                     onClick={() => setHumanLevel(lv)}
-                    className={
-                      "rounded border px-2 py-1 text-xs " +
-                      (humanLevel === lv
-                        ? "border-[color:var(--green)] bg-[color:var(--green)] text-white"
-                        : "border-[color:var(--rule)] bg-background hover:bg-muted")
-                    }
+                    className="muni-tag"
+                    aria-pressed={humanLevel === lv}
                   >
                     {lv} · {LEVEL_LABELS[lv]}
                   </button>
@@ -193,7 +220,7 @@ export function ReviewCard({ item, onReviewed }: Props) {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Notas (opcional)"
                 rows={2}
-                className="rounded border border-[color:var(--rule)] bg-background px-2 py-1 text-xs"
+                className="border border-[color:var(--caliza)] bg-[color:var(--papel)] px-2.5 py-1.5 font-sans text-[0.85rem] text-[color:var(--tinta)] focus:border-[color:var(--mezquite-oscuro)] focus:outline-none"
               />
               <div className="flex gap-2">
                 <Button
@@ -222,14 +249,16 @@ export function ReviewCard({ item, onReviewed }: Props) {
           )}
 
           {mode === "reject" && (
-            <div className="flex flex-col gap-2 rounded-md border border-red-200 bg-red-50 p-2">
-              <label className="text-xs font-medium">Motivo del rechazo</label>
+            <div className="flex flex-col gap-2 border-l-[3px] border-l-[color:var(--rojo-alerta)] border-y border-r border-[color:var(--caliza)] bg-[color:var(--rojo-alerta-bg)] p-3">
+              <label className="font-mono text-[0.7rem] uppercase tracking-[0.06em] text-[color:var(--rojo-alerta)]">
+                Motivo del rechazo
+              </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="ej. líquenes, no es heno, fuera de zona…"
                 rows={2}
-                className="rounded border border-[color:var(--rule)] bg-background px-2 py-1 text-xs"
+                className="border border-[color:var(--caliza)] bg-[color:var(--papel)] px-2.5 py-1.5 font-sans text-[0.85rem] text-[color:var(--tinta)] focus:border-[color:var(--rojo-alerta)] focus:outline-none"
               />
               <div className="flex gap-2">
                 <Button
@@ -256,7 +285,10 @@ export function ReviewCard({ item, onReviewed }: Props) {
           )}
 
           {error && (
-            <p className="text-xs text-destructive" role="alert">
+            <p
+              className="font-mono text-[0.78rem] text-[color:var(--rojo-alerta)]"
+              role="alert"
+            >
               {error}
             </p>
           )}

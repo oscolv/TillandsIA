@@ -10,25 +10,31 @@ export default function Home() {
       <SiteHeader />
 
       <main className="flex-1">
-        {/* Hero editorial — eyebrow + headline + lead, igual que henomotita.mx */}
-        <section className="border-b border-[color:var(--rule)] bg-[color:var(--linen)]">
-          <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-10 sm:px-6 sm:py-14">
-            <span className="eyebrow">Ciencia ciudadana · Valle del Mezquital</span>
-            <h1 className="font-display text-3xl font-black leading-[1.1] tracking-tight text-[color:var(--green)] sm:text-4xl">
-              Mapea un árbol con <em className="not-italic text-[color:var(--ochre)]">heno motita</em>{" "}
+        <section className="border-b border-[color:var(--caliza)] bg-[color:var(--papel)]">
+          <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-10 sm:px-6 sm:py-14">
+            <span className="etiqueta-especimen">Ciencia ciudadana · Valle del Mezquital</span>
+            <p className="nombre-cientifico">
+              <em>Tillandsia recurvata</em> (L.) L.
+            </p>
+            <h1 className="font-display text-[2.2rem] font-semibold leading-[1.05] tracking-tight text-[color:var(--tinta)] sm:text-[2.8rem]">
+              Mapea un árbol con{" "}
+              <em className="text-[color:var(--terracota)]">heno motita</em>{" "}
               en menos de un minuto.
             </h1>
-            <p className="max-w-xl text-[1.02rem] leading-relaxed text-[color:var(--ink-m)]">
-              Toma una foto, comparte tu ubicación y la inteligencia
-              artificial estima el nivel de infestación. Tu observación
-              aparece al instante en el mapa público para apoyar el control
-              y la prevención de <em>Tillandsia recurvata</em>.
+            <p className="font-mono text-[0.78rem] uppercase tracking-[0.06em] text-[color:var(--corteza)]">
+              Valle del Mezquital, Hidalgo
             </p>
-            <div className="rule-gold mt-1" aria-hidden="true" />
+            <p className="sh-lead mt-1">
+              Toma una foto, comparte tu ubicación y la inteligencia artificial
+              estima el nivel de infestación. Tu observación aparece al instante
+              en el mapa público para apoyar el control y la prevención de{" "}
+              <em>Tillandsia recurvata</em>.
+            </p>
+            <hr className="divider" aria-hidden="true" />
+            <span className="rule-gold mt-2" aria-hidden="true" />
           </div>
         </section>
 
-        {/* Flujo principal */}
         <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8 sm:py-10">
           <SeasonalBanner />
           <ImpactStats />

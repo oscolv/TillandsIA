@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TreePine, MapPin, AlertTriangle, CalendarDays } from "lucide-react";
 
 interface Stats {
   total: number;
@@ -36,65 +34,59 @@ export function ImpactStats() {
 
   if (!stats) {
     return (
-      <Card>
-        <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-16" />
-          ))}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-2 gap-px border border-[color:var(--caliza)] bg-[color:var(--caliza)] sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-[color:var(--papel)] p-4">
+            <Skeleton className="h-16" />
+          </div>
+        ))}
+      </div>
     );
   }
 
   // Si no hay observaciones, ocultar el panel — evita "0 árboles" deprimente.
   if (stats.total === 0) return null;
 
-  const items: { icon: React.ReactNode; value: string; label: string; tone?: string }[] = [
+  const items: { value: string; label: string; emphasis?: boolean }[] = [
     {
-      icon: <TreePine className="h-5 w-5 text-[color:var(--green-l)]" aria-hidden="true" />,
       value: stats.total.toLocaleString("es-MX"),
       label: stats.total === 1 ? "árbol mapeado" : "árboles mapeados",
     },
     {
-      icon: <MapPin className="h-5 w-5 text-[color:var(--green-m)]" aria-hidden="true" />,
       value: stats.municipalities.toLocaleString("es-MX"),
-      label: stats.municipalities === 1 ? "municipio cubierto" : "municipios cubiertos",
+      label: stats.municipalities === 1 ? "municipio" : "municipios",
     },
     {
-      icon: <AlertTriangle className="h-5 w-5 text-[color:var(--ochre)]" aria-hidden="true" />,
       value: `${stats.severePct}%`,
       label: "severa o muy severa",
-      tone: stats.severePct >= 25 ? "text-[color:var(--ochre)]" : undefined,
+      emphasis: stats.severePct >= 25,
     },
     {
-      icon: <CalendarDays className="h-5 w-5 text-[color:var(--gold)]" aria-hidden="true" />,
       value: `+${stats.thisWeek.toLocaleString("es-MX")}`,
       label: "esta semana",
     },
   ];
 
   return (
-    <Card
-      className="card-editorial"
+    <section
       aria-label="Estadísticas de impacto del proyecto"
+      className="grid grid-cols-2 border border-[color:var(--caliza)] sm:grid-cols-4"
     >
-      <CardContent className="grid grid-cols-2 gap-4 pt-6 sm:grid-cols-4">
-        {items.map((it, i) => (
-          <div key={i} className="flex flex-col items-center gap-1 text-center">
-            {it.icon}
-            <div
-              className={`font-display text-2xl font-black tracking-tight text-[color:var(--green)] ${
-                it.tone ?? ""
-              }`}
-            >
-              {it.value}
-            </div>
-            <div className="text-[0.7rem] uppercase tracking-[0.08em] text-muted-foreground">
-              {it.label}
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+      {items.map((it, i) => (
+        <div
+          key={i}
+          className="pstat border-[color:var(--caliza)] [&:not(:last-child)]:border-r [&:nth-child(2)]:border-r-0 sm:[&:nth-child(2)]:border-r"
+        >
+          <span
+            className={`pstat-num ${
+              it.emphasis ? "!text-[color:var(--terracota)]" : ""
+            }`}
+          >
+            {it.value}
+          </span>
+          <span className="pstat-label">{it.label}</span>
+        </div>
+      ))}
+    </section>
   );
 }

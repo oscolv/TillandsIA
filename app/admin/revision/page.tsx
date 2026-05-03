@@ -113,13 +113,14 @@ export default async function RevisionPage({
   >;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-4 px-4 py-6">
-      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[color:var(--rule)] pb-3">
+    <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-5 px-4 py-7">
+      <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[color:var(--caliza)] pb-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-[color:var(--green)]">
+          <span className="badge-science !mb-2">Admin · Curaduría</span>
+          <h1 className="font-display text-[1.7rem] font-semibold leading-tight text-[color:var(--tinta)]">
             Revisión del dataset
           </h1>
-          <p className="text-xs text-[color:var(--ink-m)]">
+          <p className="mt-1 text-[0.88rem] text-[color:var(--corteza)]">
             Acepta, corrige o rechaza las observaciones antes de exportarlas a
             Roboflow.
           </p>
@@ -130,7 +131,10 @@ export default async function RevisionPage({
         </div>
       </header>
 
-      <nav className="flex flex-wrap gap-2 text-xs">
+      <nav
+        aria-label="Filtro por estado"
+        className="flex flex-wrap gap-2"
+      >
         {(
           [
             ["pending", "Pendientes"],
@@ -146,15 +150,15 @@ export default async function RevisionPage({
             <a
               key={key}
               href={`/admin/revision?status=${key}`}
-              className={
-                "rounded-md border px-2 py-1 transition " +
-                (active
-                  ? "border-[color:var(--green)] bg-[color:var(--green)] text-white"
-                  : "border-[color:var(--rule)] text-[color:var(--ink-m)] hover:bg-muted")
-              }
+              className={`muni-tag ${active ? "active" : ""}`}
+              aria-current={active ? "page" : undefined}
             >
               {label}
-              {n !== undefined && <span className="ml-1 opacity-70">({n})</span>}
+              {n !== undefined && (
+                <span className="ml-1 font-mono text-[0.62rem] opacity-70">
+                  {n}
+                </span>
+              )}
             </a>
           );
         })}

@@ -1,21 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Raleway, Source_Serif_4 } from "next/font/google";
+import { Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
-const raleway = Raleway({
-  variable: "--font-raleway",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800", "900"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
 const sourceSerif = Source_Serif_4({
   variable: "--font-source-serif",
   subsets: ["latin"],
-  weight: ["300", "400", "600"],
+  weight: ["400", "600", "700"],
   style: ["normal", "italic"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -45,7 +52,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1E3D0A",
+  themeColor: "#F5F1E8",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -59,7 +66,7 @@ export default function RootLayout({
   return (
     <html
       lang="es-MX"
-      className={`${raleway.variable} ${sourceSerif.variable} h-full antialiased`}
+      className={`${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <head>
         <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />

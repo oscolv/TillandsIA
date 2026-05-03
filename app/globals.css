@@ -5,61 +5,74 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════
-   DESIGN SYSTEM — alineado con henomotita.mx
+   DESIGN SYSTEM — heno-motita.mx
+   Guía de campo científica · papel/tinta/mezquite
 ═══════════════════════════════════════════════ */
 :root {
-  /* Brand palette */
-  --forest:   #1E3D0A;
-  --green:    #2D5016;
-  --green-m:  #3E6B20;
-  --green-l:  #5A8F32;
-  --sage:     #8BB060;
-  --ochre:    #B8741A;
-  --gold:     #D4922C;
-  --gold-l:   #E8B050;
-  --sand:     #F2EAD8;
-  --parch:    #E8DCC8;
-  --linen:    #FAF6EE;
-  --ink:      #1A1A18;
-  --ink-m:    #3D3B34;
-  --ink-l:    #4A453E;
-  --rule:     rgba(30, 61, 10, 0.10);
-  --rule-l:   rgba(30, 61, 10, 0.06);
-  --red:      #C0392B;
+  /* Paleta heno-motita */
+  --papel:           #F5F1E8;
+  --papel-alt:       #EBE6D9;
+  --tinta:           #1A1611;
+  --caliza:          #D4CFC4;
+  --corteza:         #6B5B47;
+  --heno-seco:       #B8965A;
+  --mezquite-oscuro: #2F3E1F;
+  --terracota:       #A0541A;
+  --rojo-alerta:     #8B2E1F;
+  --rojo-alerta-bg:  #F2E5DF;
 
-  /* shadcn tokens — mapeados a la paleta */
-  --background: var(--linen);
-  --foreground: var(--ink);
-  --card: #FFFFFF;
-  --card-foreground: var(--ink);
-  --popover: #FFFFFF;
-  --popover-foreground: var(--ink);
-  --primary: var(--ochre);
-  --primary-foreground: #FFFFFF;
-  --secondary: var(--green);
-  --secondary-foreground: #FFFFFF;
-  --muted: var(--sand);
-  --muted-foreground: var(--ink-l);
-  --accent: var(--gold);
-  --accent-foreground: #FFFFFF;
-  --destructive: var(--red);
-  --border: var(--rule);
-  --input: var(--rule);
-  --ring: var(--ochre);
-  --chart-1: var(--green-l);
-  --chart-2: var(--gold);
-  --chart-3: var(--ochre);
-  --chart-4: var(--green);
-  --chart-5: var(--forest);
-  --radius: 0.5rem;
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--ochre);
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: var(--sand);
-  --sidebar-accent-foreground: var(--green);
-  --sidebar-border: var(--rule);
-  --sidebar-ring: var(--ochre);
+  /* Aliases legacy (no romper código en migración) */
+  --linen:   var(--papel);
+  --sand:    var(--papel-alt);
+  --parch:   var(--papel-alt);
+  --ink:     var(--tinta);
+  --ink-m:   var(--corteza);
+  --ink-l:   var(--corteza);
+  --rule:    var(--caliza);
+  --rule-l:  var(--caliza);
+  --green:   var(--mezquite-oscuro);
+  --green-m: var(--mezquite-oscuro);
+  --green-l: #5A8F32;
+  --forest:  var(--mezquite-oscuro);
+  --sage:    var(--heno-seco);
+  --ochre:   var(--terracota);
+  --gold:    var(--heno-seco);
+  --gold-l:  var(--heno-seco);
+  --red:     var(--rojo-alerta);
+
+  /* Tokens shadcn → paleta heno-motita */
+  --background: var(--papel);
+  --foreground: var(--tinta);
+  --card: var(--papel);
+  --card-foreground: var(--tinta);
+  --popover: var(--papel);
+  --popover-foreground: var(--tinta);
+  --primary: var(--tinta);
+  --primary-foreground: var(--papel);
+  --secondary: var(--mezquite-oscuro);
+  --secondary-foreground: var(--papel);
+  --muted: var(--papel-alt);
+  --muted-foreground: var(--corteza);
+  --accent: var(--heno-seco);
+  --accent-foreground: var(--tinta);
+  --destructive: var(--rojo-alerta);
+  --border: var(--caliza);
+  --input: var(--caliza);
+  --ring: var(--mezquite-oscuro);
+  --chart-1: var(--mezquite-oscuro);
+  --chart-2: var(--heno-seco);
+  --chart-3: var(--terracota);
+  --chart-4: var(--corteza);
+  --chart-5: var(--rojo-alerta);
+  --radius: 0;
+  --sidebar: var(--papel);
+  --sidebar-foreground: var(--tinta);
+  --sidebar-primary: var(--tinta);
+  --sidebar-primary-foreground: var(--papel);
+  --sidebar-accent: var(--papel-alt);
+  --sidebar-accent-foreground: var(--mezquite-oscuro);
+  --sidebar-border: var(--caliza);
+  --sidebar-ring: var(--mezquite-oscuro);
 }
 
 @theme inline {
@@ -95,33 +108,45 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --color-forest: var(--forest);
-  --color-green: var(--green);
-  --color-green-m: var(--green-m);
-  --color-green-l: var(--green-l);
-  --color-sage: var(--sage);
-  --color-ochre: var(--ochre);
-  --color-gold: var(--gold);
-  --color-gold-l: var(--gold-l);
-  --color-sand: var(--sand);
-  --color-parch: var(--parch);
-  --color-linen: var(--linen);
-  --color-ink: var(--ink);
-  --color-ink-m: var(--ink-m);
-  --color-ink-l: var(--ink-l);
+  --color-papel: var(--papel);
+  --color-papel-alt: var(--papel-alt);
+  --color-tinta: var(--tinta);
+  --color-caliza: var(--caliza);
+  --color-corteza: var(--corteza);
+  --color-heno-seco: var(--heno-seco);
+  --color-mezquite-oscuro: var(--mezquite-oscuro);
+  --color-terracota: var(--terracota);
+  --color-rojo-alerta: var(--rojo-alerta);
+  --color-rojo-alerta-bg: var(--rojo-alerta-bg);
 
-  --font-sans: var(--font-raleway);
+  /* Aliases legacy expuestos como utilities Tailwind */
+  --color-linen: var(--papel);
+  --color-sand: var(--papel-alt);
+  --color-parch: var(--papel-alt);
+  --color-ink: var(--tinta);
+  --color-ink-m: var(--corteza);
+  --color-ink-l: var(--corteza);
+  --color-green: var(--mezquite-oscuro);
+  --color-green-m: var(--mezquite-oscuro);
+  --color-green-l: #5A8F32;
+  --color-sage: var(--heno-seco);
+  --color-ochre: var(--terracota);
+  --color-gold: var(--heno-seco);
+  --color-gold-l: var(--heno-seco);
+  --color-forest: var(--mezquite-oscuro);
+
+  --font-sans: var(--font-inter);
   --font-serif: var(--font-source-serif);
-  --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-raleway);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-display: var(--font-source-serif);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
 }
 
 @layer base {
@@ -136,49 +161,77 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-serif), Georgia, "Times New Roman", serif;
-    line-height: 1.7;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    line-height: 1.6;
+    font-size: 16px;
+    position: relative;
   }
 
-  h1, h2, h3, h4, h5, h6,
-  button, input, select, textarea, optgroup,
-  [role="tab"], [role="button"], [role="menuitem"], [role="option"] {
-    font-family: var(--font-sans), system-ui, sans-serif;
+  /* Textura de papel sutil (heno-motita.mx) */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix values='0 0 0 0 0.42  0 0 0 0 0.36  0 0 0 0 0.28  0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity: 0.045;
+    mix-blend-mode: multiply;
+  }
+  body > * {
+    position: relative;
+    z-index: 1;
   }
 
   h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif), Georgia, "Times New Roman", serif;
     line-height: 1.15;
-    letter-spacing: -0.01em;
-    color: var(--green);
+    letter-spacing: -0.005em;
+    color: var(--tinta);
+    font-weight: 600;
   }
 
-  strong { color: var(--green); font-weight: 600; }
+  strong { color: var(--tinta); font-weight: 600; }
   em     { font-style: italic; }
 
-  a:not(.btn):not([data-slot="button"]) {
-    color: var(--green-m);
-    text-decoration: none;
-    transition: color 0.22s ease;
+  cite {
+    font-style: italic;
+    font-size: 0.9em;
+    color: var(--corteza);
+    font-family: var(--font-serif), Georgia, serif;
   }
-  a:not(.btn):not([data-slot="button"]):hover {
-    color: var(--ochre);
+
+  a:not(.btn):not([data-slot="button"]):not(.nav-link):not(.muni-tag) {
+    color: var(--mezquite-oscuro);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    transition: color 0.15s ease;
+  }
+  a:not(.btn):not([data-slot="button"]):not(.nav-link):not(.muni-tag):hover {
+    color: var(--terracota);
   }
 
   ::selection {
-    background: var(--gold-l);
-    color: var(--ink);
+    background: var(--heno-seco);
+    color: var(--tinta);
+  }
+
+  small {
+    font-size: 0.85em;
+    color: var(--corteza);
   }
 }
 
 @layer components {
-  /* Eyebrow editorial: línea + texto en versalitas (igual que henomotita.mx) */
+  /* ─── Eyebrow editorial: línea + texto en versalitas ─── */
   .eyebrow {
-    font-family: var(--font-sans), system-ui, sans-serif;
+    font-family: var(--font-mono), ui-monospace, monospace;
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--ochre);
+    color: var(--terracota);
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -191,21 +244,407 @@
     background: currentColor;
     flex-shrink: 0;
   }
-  .eyebrow.on-dark { color: var(--gold-l); }
 
+  /* ─── Badge científico (sin línea, con border-bottom) ─── */
+  .badge-science {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--terracota);
+    border-bottom: 1px solid var(--caliza);
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.9rem;
+    display: inline-block;
+  }
+
+  /* ─── Lead de sección (descripción gris bajo h2) ─── */
+  .sh-lead {
+    font-size: 1.02rem;
+    color: var(--corteza);
+    max-width: 640px;
+    line-height: 1.7;
+  }
+
+  /* ─── Divider sutil ─── */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--caliza);
+    border: none;
+    margin: 0.85rem 0 0;
+  }
+
+  /* ─── Rule dorada decorativa ─── */
   .rule-gold {
     width: 48px;
     height: 3px;
-    background: var(--gold);
-    border-radius: 2px;
+    background: var(--heno-seco);
+    border: none;
+    border-radius: 0;
   }
 
-  /* Card editorial: borde superior verde que vira a ocre en hover */
+  /* ─── Field card (border-top mezquite que vira a terracota en hover) ─── */
+  .field-card {
+    background: var(--papel);
+    border: 1px solid var(--caliza);
+    border-top: 3px solid var(--mezquite-oscuro);
+    padding: 1.5rem 1.4rem;
+    transition: border-color 0.15s ease, border-top-color 0.15s ease;
+  }
+  .field-card:hover {
+    border-color: var(--corteza);
+    border-top-color: var(--terracota);
+  }
+  .field-card.level-0 { border-top-color: var(--mezquite-oscuro); }
+  .field-card.level-1 { border-top-color: #5A8F32; }
+  .field-card.level-2 { border-top-color: var(--heno-seco); }
+  .field-card.level-3 { border-top-color: var(--terracota); }
+  .field-card.level-4 {
+    border-top-color: var(--rojo-alerta);
+    background: var(--rojo-alerta-bg);
+  }
+
+  /* Mantener .card-editorial como alias semántico */
   .card-editorial {
-    border-top: 3px solid var(--green-m);
-    transition: border-top-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+    border-top: 3px solid var(--mezquite-oscuro);
+    transition: border-top-color 0.15s ease, border-color 0.15s ease;
   }
   .card-editorial:hover {
-    border-top-color: var(--ochre);
+    border-top-color: var(--terracota);
   }
+
+  /* ─── Numeración de expediente ─── */
+  .seccion-numero {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.55em;
+    font-weight: 500;
+    color: var(--terracota);
+    margin-right: 0.7rem;
+    vertical-align: 0.22em;
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── Nota de campo (alert sutil) ─── */
+  .nota-campo {
+    border-left: 3px solid var(--heno-seco);
+    background: var(--papel-alt);
+    padding: 0.9rem 1.2rem;
+    font-size: 0.95rem;
+    color: var(--tinta);
+  }
+  .nota-campo.success {
+    border-left-color: var(--mezquite-oscuro);
+  }
+  .nota-campo.warning {
+    border-left-color: var(--terracota);
+  }
+  .nota-campo.danger {
+    border-left-color: var(--rojo-alerta);
+    background: var(--rojo-alerta-bg);
+  }
+  .nota-campo .nota-titulo {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--corteza);
+    margin-bottom: 0.35rem;
+    display: block;
+  }
+  .nota-campo.success .nota-titulo { color: var(--mezquite-oscuro); }
+  .nota-campo.warning .nota-titulo { color: var(--terracota); }
+  .nota-campo.danger  .nota-titulo { color: var(--rojo-alerta); }
+
+  /* ─── Ficha técnica (caja con header oscuro) ─── */
+  .ficha-tecnica {
+    border: 1px solid var(--tinta);
+    background: var(--papel);
+    padding: 1.2rem 1.3rem;
+  }
+  .ficha-tecnica > .ficha-tecnica-header {
+    border-bottom: 1px solid var(--tinta);
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.8rem;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--tinta);
+  }
+
+  /* ─── Tag estilo "guía de campo" ─── */
+  .muni-tag {
+    background: var(--papel);
+    color: var(--tinta);
+    border: 1px solid var(--caliza);
+    font-family: var(--font-mono), ui-monospace, monospace;
+    padding: 6px 12px;
+    border-radius: 0;
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .muni-tag:hover {
+    border-color: var(--corteza);
+    color: var(--tinta);
+  }
+  .muni-tag[aria-pressed="true"],
+  .muni-tag.active {
+    background: var(--tinta);
+    color: var(--papel);
+    border-color: var(--tinta);
+  }
+
+  /* ─── Estadística (número grande serif + label mono) ─── */
+  .pstat {
+    background: var(--papel);
+    padding: 1.4rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    text-align: center;
+  }
+  .pstat-num {
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: 1.9rem;
+    font-weight: 600;
+    color: var(--mezquite-oscuro);
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .pstat-label {
+    font-size: 0.7rem;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--corteza);
+    line-height: 1.4;
+    margin-top: 0.3rem;
+  }
+
+  /* ─── Pull quote ─── */
+  .pull-quote {
+    position: relative;
+    margin: 2rem 0;
+    padding: 1.1rem 1.6rem 1.1rem 2.6rem;
+    border-left: 3px solid var(--heno-seco);
+  }
+  .pull-quote::before {
+    content: "\201C";
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: 4.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--heno-seco);
+    opacity: 0.55;
+    position: absolute;
+    left: 0.1rem;
+    top: -0.6rem;
+  }
+  .pull-quote p {
+    font-family: var(--font-serif), Georgia, serif;
+    font-style: italic;
+    font-size: clamp(1rem, 1.6vw, 1.18rem);
+    line-height: 1.55;
+    color: var(--tinta);
+    margin: 0;
+  }
+  .pull-quote cite {
+    display: block;
+    margin-top: 0.6rem;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-style: normal;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--heno-seco);
+    opacity: 0.85;
+  }
+
+  /* ─── Botón sharp (estilo henomotita.mx) ─── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.92rem;
+    line-height: 1.2;
+    padding: 0.75rem 1.4rem;
+    border: 2px solid var(--tinta);
+    background: var(--papel);
+    color: var(--tinta);
+    border-radius: 0;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    letter-spacing: 0.01em;
+    min-height: 44px;
+  }
+  .btn:hover,
+  .btn:focus-visible {
+    background: var(--tinta);
+    color: var(--papel);
+    outline: none;
+  }
+  .btn-primary {
+    background: var(--tinta);
+    color: var(--papel);
+  }
+  .btn-primary:hover,
+  .btn-primary:focus-visible {
+    background: var(--papel);
+    color: var(--tinta);
+  }
+  .btn-outline {
+    background: var(--papel);
+    color: var(--tinta);
+  }
+
+  /* ─── Nav link claro (header) ─── */
+  .nav-link {
+    color: var(--corteza);
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 11px 12px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .nav-link:hover,
+  .nav-link:focus-visible {
+    color: var(--tinta);
+    background: var(--papel-alt);
+    outline: none;
+  }
+  .nav-link[aria-current="page"] {
+    color: var(--tinta);
+  }
+
+  /* ─── Etiqueta de especimen / portada de campo ─── */
+  .etiqueta-especimen {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--terracota);
+    border-bottom: 1px solid var(--caliza);
+    padding-bottom: 0.55rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .nombre-cientifico {
+    font-family: var(--font-serif), Georgia, serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--corteza);
+  }
+
+  /* ─── Mini-badge (estado, modelo) ─── */
+  .mini-tag {
+    display: inline-block;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border: 1px solid var(--caliza);
+    color: var(--corteza);
+    background: var(--papel);
+  }
+  .mini-tag.success { color: var(--mezquite-oscuro); border-color: var(--mezquite-oscuro); }
+  .mini-tag.warning { color: var(--terracota); border-color: var(--terracota); }
+  .mini-tag.danger  { color: var(--rojo-alerta); border-color: var(--rojo-alerta); }
+}
+
+/* ─── Override shadcn primitives (sharp) ─── */
+[data-slot="card"] {
+  border-radius: 0;
+}
+[data-slot="button"] {
+  border-radius: 0;
+}
+[data-slot="badge"] {
+  border-radius: 0;
+}
+[data-slot="alert"] {
+  border-radius: 0;
+}
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-content"] {
+  border-radius: 0;
+}
+[data-slot="popover-content"],
+[data-slot="select-content"] {
+  border-radius: 0;
+}
+[data-slot="input"],
+[data-slot="textarea"],
+[data-slot="select-trigger"] {
+  border-radius: 0;
+}
+[data-slot="progress"],
+[data-slot="progress-indicator"] {
+  border-radius: 0;
+}
+
+/* ─── Override Leaflet (popups y controles sharp) ─── */
+.leaflet-popup-content-wrapper {
+  border-radius: 0 !important;
+  box-shadow: 0 1px 3px rgba(26, 22, 17, 0.12) !important;
+  border: 1px solid var(--caliza);
+  background: var(--papel);
+  color: var(--tinta);
+}
+.leaflet-popup-content {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  margin: 0.85rem 1rem;
+}
+.leaflet-popup-tip {
+  background: var(--papel);
+  border: 1px solid var(--caliza);
+  box-shadow: none;
+}
+.leaflet-control-zoom {
+  border: 1px solid var(--caliza) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.leaflet-control-zoom a {
+  border-radius: 0 !important;
+  background: var(--papel);
+  color: var(--tinta);
+  border-bottom: 1px solid var(--caliza) !important;
+}
+.leaflet-control-zoom a:last-child {
+  border-bottom: none !important;
+}
+.leaflet-control-attribution {
+  background: var(--papel-alt) !important;
+  color: var(--corteza) !important;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.66rem !important;
+}
+
+/* ─── Focus visible global ─── */
+*:focus-visible {
+  outline: 2px solid var(--mezquite-oscuro);
+  outline-offset: 2px;
 }

@@ -47,12 +47,14 @@ export function LoginForm() {
         value={token}
         onChange={(e) => setToken(e.target.value)}
         placeholder="ADMIN_TOKEN"
-        className="w-full rounded-md border border-[color:var(--rule)] bg-background px-3 py-2 text-sm outline-none focus:border-[color:var(--green)]"
+        className="w-full border border-[color:var(--caliza)] bg-[color:var(--papel)] px-3 py-2 font-mono text-[0.92rem] text-[color:var(--tinta)] outline-none focus:border-[color:var(--mezquite-oscuro)]"
       />
       {error && (
-        <p className="text-xs text-destructive" role="alert">
-          {error}
-        </p>
+        <aside className="nota-campo danger" role="alert">
+          <p className="text-[0.88rem] leading-relaxed text-[color:var(--rojo-alerta)]">
+            {error}
+          </p>
+        </aside>
       )}
       <Button type="submit" disabled={submitting || !token}>
         {submitting ? "Entrando…" : "Entrar"}

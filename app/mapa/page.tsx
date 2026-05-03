@@ -2,9 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Filter, X } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MUNICIPALITIES } from "@/lib/municipalities";
@@ -15,7 +13,7 @@ const ObservationMap = dynamic(
   () => import("@/components/ObservationMap").then((m) => m.ObservationMap),
   {
     ssr: false,
-    loading: () => <Skeleton className="w-full h-full rounded-none" />,
+    loading: () => <Skeleton className="w-full h-full" />,
   },
 );
 
@@ -63,37 +61,35 @@ export default function MapaPage() {
   return (
     <div className="flex h-screen flex-col">
       <SiteHeader>
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2 sm:px-6">
-          <span className="eyebrow on-dark">Mapa público</span>
-          <Button
-            variant={activeCount > 0 ? "default" : "outline"}
-            size="sm"
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
+          <span className="badge-science !mb-0 !pb-0 !border-b-0">
+            Mapa público
+          </span>
+          <button
+            type="button"
             onClick={() => setShowFilters((v) => !v)}
-            className={`gap-2 ${
-              activeCount > 0
-                ? ""
-                : "border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
-            }`}
+            className="muni-tag"
             aria-expanded={showFilters}
             aria-controls="filter-panel"
+            aria-pressed={showFilters || activeCount > 0}
           >
-            <Filter className="h-4 w-4" aria-hidden="true" />
+            <Filter className="h-3.5 w-3.5" aria-hidden="true" />
             Filtros
             {activeCount > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+              <span className="ml-1 inline-flex h-4 min-w-[1rem] items-center justify-center bg-[color:var(--terracota)] px-1 font-mono text-[0.62rem] font-semibold text-[color:var(--papel)]">
                 {activeCount}
-              </Badge>
+              </span>
             )}
-          </Button>
+          </button>
         </div>
 
         {showFilters && (
           <div
             id="filter-panel"
-            className="mx-auto flex max-w-5xl flex-col gap-3 border-t border-white/10 px-4 py-3 sm:px-6"
+            className="mx-auto flex max-w-5xl flex-col gap-3 border-t border-[color:var(--caliza)] px-4 py-4 sm:px-6"
           >
-            <div className="flex flex-col gap-1">
-              <span className="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white/65">
+            <div className="flex flex-col gap-1.5">
+              <span className="font-mono text-[0.7rem] uppercase tracking-[0.1em] text-[color:var(--corteza)]">
                 Nivel de infestación
               </span>
               <div className="flex flex-wrap gap-2">
@@ -104,15 +100,11 @@ export default function MapaPage() {
                       key={lvl}
                       type="button"
                       onClick={() => toggleLevel(lvl)}
-                      className={`flex items-center gap-1.5 rounded-full border-2 px-2.5 py-1 text-xs font-medium transition ${
-                        active
-                          ? "border-white bg-white text-[color:var(--forest)]"
-                          : "border-white/30 bg-transparent text-white hover:bg-white/10"
-                      }`}
+                      className="muni-tag"
                       aria-pressed={active}
                     >
                       <span
-                        className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-white text-[9px] font-bold text-white"
+                        className="inline-flex h-4 w-4 items-center justify-center border border-[color:var(--tinta)] font-mono text-[9px] font-bold text-[color:var(--papel)]"
                         style={{ backgroundColor: LEVEL_COLOR[lvl] }}
                         aria-hidden="true"
                       >
@@ -125,10 +117,10 @@ export default function MapaPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               <label
                 htmlFor="muni-select"
-                className="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white/65"
+                className="font-mono text-[0.7rem] uppercase tracking-[0.1em] text-[color:var(--corteza)]"
               >
                 Municipio
               </label>
@@ -136,11 +128,11 @@ export default function MapaPage() {
                 id="muni-select"
                 value={muniFilter ?? ""}
                 onChange={(e) => setMuniFilter(e.target.value || null)}
-                className="w-full max-w-xs rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white backdrop-blur"
+                className="w-full max-w-xs border border-[color:var(--caliza)] bg-[color:var(--papel)] px-3 py-1.5 font-sans text-[0.9rem] text-[color:var(--tinta)] focus:border-[color:var(--mezquite-oscuro)] focus:outline-none"
               >
                 <option value="">Todos</option>
                 {MUNICIPALITIES.map((m) => (
-                  <option key={m.name} value={m.name} className="text-foreground">
+                  <option key={m.name} value={m.name}>
                     {m.name}
                   </option>
                 ))}
@@ -148,15 +140,14 @@ export default function MapaPage() {
             </div>
 
             {activeCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
+                type="button"
                 onClick={clearAll}
-                className="self-start gap-2 text-white hover:bg-white/10 hover:text-white"
+                className="self-start inline-flex items-center gap-1.5 font-mono text-[0.72rem] uppercase tracking-[0.06em] text-[color:var(--corteza)] hover:text-[color:var(--tinta)]"
               >
-                <X className="h-4 w-4" aria-hidden="true" />
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
                 Limpiar filtros
-              </Button>
+              </button>
             )}
           </div>
         )}
@@ -179,13 +170,18 @@ function Legend() {
     { lvl: 4, color: "#ef4444", label: "Muy severa" },
   ];
   return (
-    <div className="absolute bottom-4 left-4 z-[1000] bg-card border border-border rounded-md shadow-lg p-3 text-xs">
-      <div className="font-semibold mb-2">Nivel de infestación</div>
-      <ul className="flex flex-col gap-1">
+    <div className="absolute bottom-4 left-4 z-[1000] border border-[color:var(--caliza)] bg-[color:var(--papel)] p-3 text-[0.78rem]">
+      <div className="mb-2 font-mono text-[0.66rem] font-medium uppercase tracking-[0.1em] text-[color:var(--terracota)]">
+        Nivel de infestación
+      </div>
+      <ul className="flex flex-col gap-1.5">
         {items.map((it) => (
-          <li key={it.lvl} className="flex items-center gap-2">
+          <li
+            key={it.lvl}
+            className="flex items-center gap-2 text-[color:var(--tinta)]"
+          >
             <span
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] font-bold text-white"
+              className="inline-flex h-5 w-5 items-center justify-center border border-[color:var(--tinta)] font-mono text-[10px] font-bold text-[color:var(--papel)]"
               style={{ backgroundColor: it.color }}
               aria-hidden="true"
             >
