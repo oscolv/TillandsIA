@@ -32,9 +32,14 @@ export function SeasonalBanner() {
 
   if (month >= 1 && month <= 4) {
     return (
-      <Alert className="border-emerald-300 bg-emerald-50">
-        <CalendarRange className="h-4 w-4" aria-hidden="true" />
-        <AlertTitle>Ventana óptima de mapeo</AlertTitle>
+      <Alert className="border-l-4 border-[color:var(--green-m)] bg-[#EBF3E0]">
+        <CalendarRange
+          className="h-4 w-4 text-[color:var(--green-m)]"
+          aria-hidden="true"
+        />
+        <AlertTitle className="text-[color:var(--green)]">
+          Ventana óptima de mapeo
+        </AlertTitle>
         <AlertDescription>
           Enero–abril es la mejor época para mapear: los árboles están sin
           hojas y el heno motita es más visible. Tus observaciones ayudan a
@@ -46,9 +51,14 @@ export function SeasonalBanner() {
 
   if (month >= 7 && month <= 9) {
     return (
-      <Alert>
-        <CloudRain className="h-4 w-4" aria-hidden="true" />
-        <AlertTitle>Temporada de lluvias</AlertTitle>
+      <Alert className="border-l-4 border-[color:var(--ochre)] bg-[#FFF8EA]">
+        <CloudRain
+          className="h-4 w-4 text-[color:var(--ochre)]"
+          aria-hidden="true"
+        />
+        <AlertTitle className="text-[color:var(--ochre)]">
+          Temporada de lluvias
+        </AlertTitle>
         <AlertDescription>
           Las lluvias hacen el heno motita más difícil de ver, pero también
           reducen su dispersión. Sigue mapeando — cada observación cuenta.

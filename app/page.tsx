@@ -1,53 +1,42 @@
-import Link from "next/link";
 import { UploadFlow } from "@/components/UploadFlow";
 import { ImpactStats } from "@/components/ImpactStats";
 import { SeasonalBanner } from "@/components/SeasonalBanner";
-import { Button } from "@/components/ui/button";
-import { Map as MapIcon, Leaf, Info } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 min-h-screen">
-      <header className="border-b border-border bg-card">
-        <div className="max-w-xl mx-auto flex items-center justify-between px-4 py-3">
-          <h1 className="flex items-center gap-2 font-semibold">
-            <Leaf className="h-5 w-5 text-emerald-600" aria-hidden="true" />
-            <span>TillandsIA</span>
-          </h1>
-          <nav className="flex items-center gap-1">
-            <Link href="/mapa">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <MapIcon className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Mapa</span>
-              </Button>
-            </Link>
-            <Link href="/sobre">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Info className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Sobre</span>
-              </Button>
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
 
-      <main className="flex-1 px-4 py-6 sm:py-10">
-        <div className="w-full max-w-xl mx-auto flex flex-col gap-6">
+      <main className="flex-1">
+        {/* Hero editorial — eyebrow + headline + lead, igual que henomotita.mx */}
+        <section className="border-b border-[color:var(--rule)] bg-[color:var(--linen)]">
+          <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-10 sm:px-6 sm:py-14">
+            <span className="eyebrow">Ciencia ciudadana · Valle del Mezquital</span>
+            <h1 className="font-display text-3xl font-black leading-[1.1] tracking-tight text-[color:var(--green)] sm:text-4xl">
+              Mapea un árbol con <em className="not-italic text-[color:var(--ochre)]">heno motita</em>{" "}
+              en menos de un minuto.
+            </h1>
+            <p className="max-w-xl text-[1.02rem] leading-relaxed text-[color:var(--ink-m)]">
+              Toma una foto, comparte tu ubicación y la inteligencia
+              artificial estima el nivel de infestación. Tu observación
+              aparece al instante en el mapa público para apoyar el control
+              y la prevención de <em>Tillandsia recurvata</em>.
+            </p>
+            <div className="rule-gold mt-1" aria-hidden="true" />
+          </div>
+        </section>
+
+        {/* Flujo principal */}
+        <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8 sm:py-10">
           <SeasonalBanner />
           <ImpactStats />
           <UploadFlow />
         </div>
       </main>
 
-      <footer className="border-t border-border py-4 text-center text-xs text-muted-foreground">
-        <p>
-          TillandsIA — ciencia ciudadana del Valle del Mezquital. Sin
-          registro, sin cookies.{" "}
-          <Link href="/sobre" className="underline">
-            Más info
-          </Link>
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

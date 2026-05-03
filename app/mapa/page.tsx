@@ -1,12 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Filter, Leaf, X } from "lucide-react";
+import { Filter, X } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
 import { MUNICIPALITIES } from "@/lib/municipalities";
 import type { InfestationLevel } from "@/lib/types";
 import type { MapFilters } from "@/components/ObservationMap";
@@ -61,46 +61,39 @@ export default function MapaPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <header className="border-b border-border bg-card flex-shrink-0">
-        <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3 gap-2">
-          <h1 className="flex items-center gap-2 font-semibold min-w-0">
-            <Leaf className="h-5 w-5 text-emerald-600 shrink-0" aria-hidden="true" />
-            <span className="truncate">Mapa</span>
-          </h1>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={activeCount > 0 ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowFilters((v) => !v)}
-              className="gap-2"
-              aria-expanded={showFilters}
-              aria-controls="filter-panel"
-            >
-              <Filter className="h-4 w-4" aria-hidden="true" />
-              Filtros
-              {activeCount > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-                  {activeCount}
-                </Badge>
-              )}
-            </Button>
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="gap-2">
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Subir foto</span>
-              </Button>
-            </Link>
-          </div>
+    <div className="flex h-screen flex-col">
+      <SiteHeader>
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2 sm:px-6">
+          <span className="eyebrow on-dark">Mapa público</span>
+          <Button
+            variant={activeCount > 0 ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowFilters((v) => !v)}
+            className={`gap-2 ${
+              activeCount > 0
+                ? ""
+                : "border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
+            }`}
+            aria-expanded={showFilters}
+            aria-controls="filter-panel"
+          >
+            <Filter className="h-4 w-4" aria-hidden="true" />
+            Filtros
+            {activeCount > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                {activeCount}
+              </Badge>
+            )}
+          </Button>
         </div>
 
         {showFilters && (
           <div
             id="filter-panel"
-            className="border-t border-border bg-card max-w-5xl mx-auto px-4 py-3 flex flex-col gap-3"
+            className="mx-auto flex max-w-5xl flex-col gap-3 border-t border-white/10 px-4 py-3 sm:px-6"
           >
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-muted-foreground">
+              <span className="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white/65">
                 Nivel de infestación
               </span>
               <div className="flex flex-wrap gap-2">
@@ -111,10 +104,10 @@ export default function MapaPage() {
                       key={lvl}
                       type="button"
                       onClick={() => toggleLevel(lvl)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border-2 transition ${
+                      className={`flex items-center gap-1.5 rounded-full border-2 px-2.5 py-1 text-xs font-medium transition ${
                         active
-                          ? "border-foreground bg-foreground text-background"
-                          : "border-border bg-card hover:bg-muted"
+                          ? "border-white bg-white text-[color:var(--forest)]"
+                          : "border-white/30 bg-transparent text-white hover:bg-white/10"
                       }`}
                       aria-pressed={active}
                     >
@@ -135,7 +128,7 @@ export default function MapaPage() {
             <div className="flex flex-col gap-1">
               <label
                 htmlFor="muni-select"
-                className="text-xs font-semibold text-muted-foreground"
+                className="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white/65"
               >
                 Municipio
               </label>
@@ -143,11 +136,11 @@ export default function MapaPage() {
                 id="muni-select"
                 value={muniFilter ?? ""}
                 onChange={(e) => setMuniFilter(e.target.value || null)}
-                className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-1.5 text-sm"
+                className="w-full max-w-xs rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-sm text-white backdrop-blur"
               >
                 <option value="">Todos</option>
                 {MUNICIPALITIES.map((m) => (
-                  <option key={m.name} value={m.name}>
+                  <option key={m.name} value={m.name} className="text-foreground">
                     {m.name}
                   </option>
                 ))}
@@ -159,7 +152,7 @@ export default function MapaPage() {
                 variant="ghost"
                 size="sm"
                 onClick={clearAll}
-                className="self-start gap-2"
+                className="self-start gap-2 text-white hover:bg-white/10 hover:text-white"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
                 Limpiar filtros
@@ -167,9 +160,9 @@ export default function MapaPage() {
             )}
           </div>
         )}
-      </header>
+      </SiteHeader>
 
-      <div className="flex-1 relative">
+      <div className="relative flex-1">
         <ObservationMap filters={filters} />
         <Legend />
       </div>

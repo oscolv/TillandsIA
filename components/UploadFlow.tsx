@@ -205,7 +205,7 @@ export function UploadFlow() {
       <Stepper step={state.step} />
 
       {state.step === "intro" && (
-        <Card>
+        <Card className="card-editorial">
           <CardHeader>
             <CardTitle>Bienvenido</CardTitle>
           </CardHeader>
@@ -234,7 +234,7 @@ export function UploadFlow() {
       )}
 
       {state.step === "photo" && (
-        <Card>
+        <Card className="card-editorial">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5" />
@@ -252,7 +252,7 @@ export function UploadFlow() {
       )}
 
       {state.step === "location" && (
-        <Card>
+        <Card className="card-editorial">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
@@ -275,7 +275,7 @@ export function UploadFlow() {
       )}
 
       {state.step === "classifying" && (
-        <Card aria-busy="true" aria-live="polite">
+        <Card className="card-editorial" aria-busy="true" aria-live="polite">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
@@ -304,7 +304,7 @@ export function UploadFlow() {
       )}
 
       {state.step === "submitting" && (
-        <Card>
+        <Card className="card-editorial">
           <CardContent className="pt-6 flex items-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span>Publicando observación...</span>
@@ -313,9 +313,9 @@ export function UploadFlow() {
       )}
 
       {state.step === "done" && (
-        <Card>
+        <Card className="card-editorial">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-emerald-700">
+            <CardTitle className="flex items-center gap-2 text-[color:var(--green-m)]">
               <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
               ¡Observación publicada!
             </CardTitle>

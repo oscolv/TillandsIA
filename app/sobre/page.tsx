@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import {
-  ArrowLeft,
-  Leaf,
-  Info,
-  Shield,
-  BookOpen,
-  Microscope,
-} from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { Info, Shield, BookOpen, Microscope } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Sobre TillandsIA — Mapeo ciudadano del heno motita",
@@ -21,24 +15,26 @@ export const metadata: Metadata = {
 
 export default function SobrePage() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="border-b border-border bg-card">
-        <div className="max-w-3xl mx-auto flex items-center justify-between px-4 py-3">
-          <h1 className="flex items-center gap-2 font-semibold">
-            <Leaf className="h-5 w-5 text-emerald-600" aria-hidden="true" />
-            <span>Sobre el proyecto</span>
-          </h1>
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Inicio
-            </Button>
-          </Link>
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
 
-      <main className="flex-1 max-w-3xl mx-auto px-4 py-6 sm:py-10 flex flex-col gap-6">
-        <Card>
+      <section className="border-b border-[color:var(--rule)] bg-[color:var(--linen)]">
+        <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-10 sm:px-6 sm:py-12">
+          <span className="eyebrow">Sobre el proyecto</span>
+          <h1 className="font-display text-3xl font-black leading-[1.1] tracking-tight text-[color:var(--green)] sm:text-4xl">
+            Ciencia abierta para entender al{" "}
+            <em className="not-italic text-[color:var(--ochre)]">heno motita</em>
+          </h1>
+          <p className="max-w-xl text-[1rem] leading-relaxed text-[color:var(--ink-m)]">
+            Cómo funciona TillandsIA, en qué evidencia se apoya y cómo
+            cuidamos tu privacidad mientras mapeamos el Valle del Mezquital.
+          </p>
+          <div className="rule-gold mt-1" aria-hidden="true" />
+        </div>
+      </section>
+
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
+        <Card className="card-editorial">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Microscope className="h-5 w-5" aria-hidden="true" />
@@ -67,7 +63,7 @@ export default function SobrePage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-editorial">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Info className="h-5 w-5" aria-hidden="true" />
@@ -100,7 +96,7 @@ export default function SobrePage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-editorial">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" aria-hidden="true" />
@@ -144,7 +140,7 @@ export default function SobrePage() {
           </AlertDescription>
         </Alert>
 
-        <Card>
+        <Card className="card-editorial">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" aria-hidden="true" />
@@ -174,7 +170,7 @@ export default function SobrePage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-editorial">
           <CardHeader>
             <CardTitle>Créditos y referencias científicas</CardTitle>
           </CardHeader>
@@ -227,12 +223,7 @@ export default function SobrePage() {
         </p>
       </main>
 
-      <footer className="border-t border-border py-4 text-center text-xs text-muted-foreground">
-        <p>
-          TillandsIA — ciencia ciudadana del Valle del Mezquital. Sin
-          registro, sin cookies.
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

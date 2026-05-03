@@ -51,38 +51,47 @@ export function ImpactStats() {
 
   const items: { icon: React.ReactNode; value: string; label: string; tone?: string }[] = [
     {
-      icon: <TreePine className="h-5 w-5 text-emerald-600" aria-hidden="true" />,
+      icon: <TreePine className="h-5 w-5 text-[color:var(--green-l)]" aria-hidden="true" />,
       value: stats.total.toLocaleString("es-MX"),
       label: stats.total === 1 ? "árbol mapeado" : "árboles mapeados",
     },
     {
-      icon: <MapPin className="h-5 w-5 text-sky-600" aria-hidden="true" />,
+      icon: <MapPin className="h-5 w-5 text-[color:var(--green-m)]" aria-hidden="true" />,
       value: stats.municipalities.toLocaleString("es-MX"),
       label: stats.municipalities === 1 ? "municipio cubierto" : "municipios cubiertos",
     },
     {
-      icon: <AlertTriangle className="h-5 w-5 text-orange-600" aria-hidden="true" />,
+      icon: <AlertTriangle className="h-5 w-5 text-[color:var(--ochre)]" aria-hidden="true" />,
       value: `${stats.severePct}%`,
       label: "severa o muy severa",
-      tone: stats.severePct >= 25 ? "text-orange-700 font-semibold" : undefined,
+      tone: stats.severePct >= 25 ? "text-[color:var(--ochre)]" : undefined,
     },
     {
-      icon: <CalendarDays className="h-5 w-5 text-violet-600" aria-hidden="true" />,
+      icon: <CalendarDays className="h-5 w-5 text-[color:var(--gold)]" aria-hidden="true" />,
       value: `+${stats.thisWeek.toLocaleString("es-MX")}`,
       label: "esta semana",
     },
   ];
 
   return (
-    <Card aria-label="Estadísticas de impacto del proyecto">
-      <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
+    <Card
+      className="card-editorial"
+      aria-label="Estadísticas de impacto del proyecto"
+    >
+      <CardContent className="grid grid-cols-2 gap-4 pt-6 sm:grid-cols-4">
         {items.map((it, i) => (
-          <div key={i} className="flex flex-col items-center text-center gap-1">
+          <div key={i} className="flex flex-col items-center gap-1 text-center">
             {it.icon}
-            <div className={`text-2xl font-bold ${it.tone ?? ""}`}>
+            <div
+              className={`font-display text-2xl font-black tracking-tight text-[color:var(--green)] ${
+                it.tone ?? ""
+              }`}
+            >
               {it.value}
             </div>
-            <div className="text-xs text-muted-foreground">{it.label}</div>
+            <div className="text-[0.7rem] uppercase tracking-[0.08em] text-muted-foreground">
+              {it.label}
+            </div>
           </div>
         ))}
       </CardContent>
