@@ -8,6 +8,7 @@ import type {
 } from "@/lib/types";
 import { ReviewQueue } from "@/components/admin/ReviewQueue";
 import { ExportButton } from "@/components/admin/ExportButton";
+import { LogoutButton } from "@/components/admin/LogoutButton";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -123,7 +124,10 @@ export default async function RevisionPage({
             Roboflow.
           </p>
         </div>
-        <ExportButton exportable={exportable} />
+        <div className="flex items-end gap-3">
+          <ExportButton exportable={exportable} />
+          <LogoutButton />
+        </div>
       </header>
 
       <nav className="flex flex-wrap gap-2 text-xs">
