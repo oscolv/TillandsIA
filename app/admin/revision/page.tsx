@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { db, observations } from "@/lib/db";
 import type {
   HumanReviewStatus,
@@ -7,6 +7,7 @@ import type {
   TrainingSplit,
 } from "@/lib/types";
 import { ReviewQueue } from "@/components/admin/ReviewQueue";
+import { ExportButton } from "@/components/admin/ExportButton";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -26,7 +27,7 @@ export default async function RevisionPage({
   const sp = await searchParams;
   const status = (sp.status as HumanReviewStatus | "all" | undefined) ?? "pending";
 
-  const [rows, countsRaw] = await Promise.all([
+  const [rows, countsRaw, exportableRow] = await Promise.all([
     db
       .select({
         id: observations.id,
@@ -63,7 +64,17 @@ export default async function RevisionPage({
       })
       .from(observations)
       .groupBy(observations.humanReviewStatus),
+    db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(observations)
+      .where(
+        and(
+          inArray(observations.humanReviewStatus, ["accepted", "corrected"]),
+          isNotNull(observations.imageHash),
+        ),
+      ),
   ]);
+  const exportable = exportableRow[0]?.n ?? 0;
 
   const hasMore = rows.length > PAGE_SIZE;
   const initialItems: ReviewItem[] = (hasMore ? rows.slice(0, PAGE_SIZE) : rows).map(
@@ -112,9 +123,7 @@ export default async function RevisionPage({
             Roboflow.
           </p>
         </div>
-        <form action="/api/admin/login" method="post" className="hidden">
-          <input type="hidden" name="_method" value="DELETE" />
-        </form>
+        <ExportButton exportable={exportable} />
       </header>
 
       <nav className="flex flex-wrap gap-2 text-xs">
