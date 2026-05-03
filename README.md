@@ -74,7 +74,28 @@ Cada observación entra al dataset con `human_review_status = 'pending'`. Un rev
 - `corrected` — `human_level` contiene la etiqueta correcta.
 - `rejected` — foto inválida (líquenes, no hospedero, fuera de zona, etc.).
 
-El campo `training_split` (`train | val | test`) se asigna al exportar el dataset etiquetado para entrenar un modelo fine-tuned.
+El campo `training_split` (`train | valid | test`) se asigna al exportar el dataset etiquetado para entrenar un modelo fine-tuned.
+
+**Cómo revisar:**
+
+1. Genera un token de admin: `openssl rand -hex 32` y guárdalo en `.env.local` como `ADMIN_TOKEN=…` (también en Vercel para producción).
+2. `npm run dev` → visita `/admin/revision`. La primera vez te pide el token; queda en una cookie httpOnly por 30 días.
+3. Por cada observación: **Aceptar**, **Corregir nivel** (selecciona 0–4 + nota opcional) o **Rechazar** (con motivo).
+4. Las pestañas superiores filtran por estado y muestran el conteo total.
+
+**Cómo exportar para Roboflow:**
+
+```bash
+npm run db:export-roboflow
+```
+
+El script:
+
+- Lee solo observaciones con `human_review_status IN ('accepted', 'corrected')` y `image_hash IS NOT NULL`.
+- Asigna `training_split` 70/20/10 de forma determinista por `md5(id)` y lo persiste en la fila — re-exports posteriores conservan el split.
+- Descarga las fotos del Blob a `exports/roboflow-YYYYMMDD-HHmmss/{train,valid,test}/{nivel_slug}/{id}.jpg`.
+- Genera `_classes.csv` por split (formato `filename,class`) y `metadata.jsonl` en la raíz con coordenadas, especie, notas y demás campos para análisis offline.
+- Imprime el comando exacto para comprimir el ZIP que se sube a Roboflow.
 
 ---
 
@@ -152,6 +173,10 @@ CREATE TABLE observations (
 | `POST /api/classify` | Sanitiza, clasifica y cachea `{imageHash → classification}` |
 | `POST /api/observations` | Persiste tras verificar el hash y leer la classification del cache |
 | `GET /api/observations` | Lista pública para alimentar el mapa |
+| `/admin/revision` | Cola de revisión humana (protegida por `ADMIN_TOKEN`) |
+| `GET /api/admin/queue` | Lote de observaciones por estado de revisión |
+| `PATCH /api/admin/review/:id` | Registrar accept / correct / reject |
+| `POST /api/admin/login` | Set-cookie con `ADMIN_TOKEN` |
 
 ---
 
@@ -169,11 +194,61 @@ KV_REST_API_TOKEN=              # o UPSTASH_REDIS_REST_TOKEN
 # Sal para HMAC del IP — debe ser un secreto, ≥32 bytes aleatorios
 RATE_LIMIT_SALT=
 
+# Token para acceder a /admin/revision (>=32 bytes aleatorios)
+ADMIN_TOKEN=
+
 # Opcional
 MAX_PHOTO_MB=10
 ```
 
 En desarrollo: `vercel env pull .env.local` (requiere `vercel link`).
+
+### Cómo generar `ADMIN_TOKEN`
+
+`ADMIN_TOKEN` es la contraseña que protege `/admin/revision`. Tiene que ser un secreto largo y aleatorio — el middleware lo compara con la cookie en tiempo constante, así que la fortaleza depende solo de la entropía del token.
+
+**1. Genera el valor (32 bytes ≈ 64 caracteres hex):**
+
+```bash
+openssl rand -hex 32
+```
+
+Alternativas equivalentes:
+
+```bash
+# Node.js puro (sin dependencias del sistema)
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+# Linux con /dev/urandom
+head -c 32 /dev/urandom | xxd -p -c 64
+```
+
+Cualquiera de los tres produce un string como `a3f9…d2c1` de 64 caracteres.
+
+**2. Guárdalo en `.env.local` para desarrollo:**
+
+```bash
+echo "ADMIN_TOKEN=$(openssl rand -hex 32)" >> .env.local
+```
+
+**3. Súbelo a Vercel para producción y preview:**
+
+```bash
+# Te pedirá pegar el valor; selecciona Production y Preview.
+vercel env add ADMIN_TOKEN
+# Luego sincroniza tu local con el de Vercel:
+vercel env pull .env.local
+```
+
+O desde el dashboard: Project → Settings → Environment Variables → Add → `ADMIN_TOKEN`.
+
+**4. Reinicia el dev server** (`npm run dev`) para que cargue la variable, y entra a `/admin/revision`. La cookie `admin_token` queda httpOnly por 30 días; para cerrar sesión: `curl -X DELETE http://localhost:3000/api/admin/login` o borra la cookie en DevTools.
+
+**Reglas de manejo:**
+
+- No lo commitees. `.env*.local` ya está en `.gitignore`.
+- No lo compartas por canales no seguros (Slack/Telegram público). Para el equipo: gestor de contraseñas o `vercel env pull`.
+- Si se filtra: rota con `vercel env rm ADMIN_TOKEN` + `vercel env add ADMIN_TOKEN` + `vercel env pull` y todas las sesiones existentes quedan inválidas (la cookie deja de coincidir).
 
 ---
 

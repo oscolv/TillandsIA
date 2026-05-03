@@ -74,8 +74,36 @@ export type HumanReviewStatus = "pending" | "accepted" | "corrected" | "rejected
 
 /**
  * Split de entrenamiento al exportar el dataset etiquetado.
+ * Usa la convención de carpetas de Roboflow: train / valid / test.
  */
-export type TrainingSplit = "train" | "val" | "test";
+export type TrainingSplit = "train" | "valid" | "test";
+
+/**
+ * Forma de un item en la cola de revisión humana (GET /api/admin/queue).
+ * Incluye toda la predicción del modelo más el estado de revisión actual.
+ */
+export interface ReviewItem {
+  id: string;
+  created_at: string;
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+  photo_url: string;
+  level: InfestationLevel;
+  label: string;
+  confidence: number | null;
+  tree_species: string | null;
+  tree_species_common: string | null;
+  ai_notes: string | null;
+  municipality: string | null;
+  flagged: boolean;
+  flag_reasons: string[];
+  human_review_status: HumanReviewStatus;
+  human_level: InfestationLevel | null;
+  reviewer_notes: string | null;
+  training_split: TrainingSplit | null;
+  image_hash: string | null;
+}
 
 /**
  * Forma pública de una observación (la que devuelve GET /api/observations).
