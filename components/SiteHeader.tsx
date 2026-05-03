@@ -22,7 +22,8 @@ export function SiteHeader({ children }: SiteHeaderProps) {
         >
           <BrandLogo className="h-8 w-8 shrink-0" title="TillandsIA" />
           <span className="font-display text-[0.95rem] font-extrabold leading-tight tracking-tight">
-            TillandsIA
+            <em className="font-extrabold">Tillands</em>
+            <span className="not-italic">IA</span>
             <span className="ml-2 hidden text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-white/55 sm:inline">
               · Valle del Mezquital
             </span>
@@ -52,7 +53,7 @@ export function SiteHeader({ children }: SiteHeaderProps) {
                 href="https://henomotita.mx"
                 className="rounded px-3 py-2 text-[0.78rem] font-semibold uppercase tracking-[0.06em] transition hover:bg-white/10 hover:text-white"
               >
-                Guía
+                Home
               </a>
             </li>
             <li>

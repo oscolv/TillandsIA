@@ -136,7 +136,9 @@ export default function SobrePage() {
           <AlertDescription>
             La clasificación es automática y debe validarse en campo antes de
             usarse para decisiones de manejo, aplicación de químicos o poda.
-            Los datos del mapa son indicativos, no definitivos.
+            Los datos del mapa son indicativos, no definitivos. Las
+            fotografías se utilizarán para etiquetado manual y luego entrenar
+            un modelo específico para heno motita.
           </AlertDescription>
         </Alert>
 
@@ -147,26 +149,13 @@ export default function SobrePage() {
               Marco normativo
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2 text-sm">
-            <ul className="list-disc list-inside flex flex-col gap-1">
-              <li>
-                <strong>NOM-011-SEMARNAT-1996</strong>: Norma Oficial Mexicana
-                que regula el aprovechamiento, transporte y disposición de
-                materia vegetal forestal —{" "}
-                <em>aplica al material removido</em> tras el control mecánico
-                del heno motita.
-              </li>
-              <li>
-                <strong>Decreto ZRE Presa Endhó</strong> (DOF 26/09/2024):
-                Declara 36,637 ha del Valle del Mezquital como Zona de
-                Restauración Ecológica e identifica al heno motita como
-                especie invasora objetivo de control obligatorio.
-              </li>
-              <li>
-                <strong>CONAFOR</strong>: Programa de Sanidad Forestal, con
-                financiamiento PF.1 ($1,400/ha) y PF.2 (brigadas).
-              </li>
-            </ul>
+          <CardContent className="text-sm">
+            <p>
+              <strong>Decreto ZRE Presa Endhó</strong> (DOF 26/09/2024):
+              Declara 36,637 ha del Valle del Mezquital como Zona de
+              Restauración Ecológica e identifica al heno motita como especie
+              invasora objetivo de control obligatorio.
+            </p>
           </CardContent>
         </Card>
 

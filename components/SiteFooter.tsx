@@ -13,8 +13,9 @@ export function SiteFooter() {
           <div className="flex max-w-md items-start gap-3">
             <BrandLogo className="h-9 w-9 shrink-0" title="TillandsIA" />
             <div>
-              <p className="font-display text-base font-extrabold uppercase tracking-[0.1em] text-white">
-                TillandsIA
+              <p className="font-display text-lg font-extrabold tracking-tight text-white">
+                <em className="font-extrabold">Tillands</em>
+                <span className="not-italic">IA</span>
               </p>
               <p className="mt-1 text-sm leading-relaxed">
                 Mapeo ciudadano del heno motita en el Valle del Mezquital.
@@ -58,8 +59,8 @@ export function SiteFooter() {
         <div className="border-t border-white/10 pt-5 text-xs text-white/50">
           <p>
             Ciencia ciudadana del Valle del Mezquital ·{" "}
-            <em className="not-italic text-white/65">Tillandsia recurvata</em>{" "}
-            · Datos públicos, abiertos y anónimos.
+            <em className="text-white/65">Tillandsia recurvata</em> · Datos
+            públicos, abiertos y anónimos.
           </p>
         </div>
       </div>
