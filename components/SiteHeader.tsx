@@ -27,7 +27,7 @@ export function SiteHeader({ children }: SiteHeaderProps) {
 
         <nav aria-label="Navegación principal">
           <ul className="flex items-center gap-0">
-            <li className="hidden sm:block">
+            <li>
               <Link href="/mapa" className="nav-link">
                 Mapa
               </Link>
