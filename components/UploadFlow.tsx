@@ -224,22 +224,22 @@ export function UploadFlow() {
 
       {state.step === "photo" && (
         <Card className="card-editorial">
-          <CardHeader>
+          <CardHeader className="!pb-3">
             <CardTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5" />
               Toma una foto del árbol
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <p className="text-[0.92rem] leading-relaxed text-[color:var(--corteza)]">
-              Captura el árbol completo, incluyendo el dosel. Después
-              compartirás tu ubicación.
-            </p>
+          <CardContent className="flex flex-col gap-3">
             <CameraCapture
               onCapture={(file, previewUrl) =>
                 dispatch({ type: "PHOTO_TAKEN", file, previewUrl })
               }
             />
+            <p className="text-[0.9rem] leading-relaxed text-[color:var(--corteza)]">
+              Captura el árbol completo, incluyendo el dosel. Después
+              compartirás tu ubicación.
+            </p>
             <p className="flex items-center gap-1.5 font-mono text-[0.7rem] uppercase tracking-[0.06em] text-[color:var(--corteza)]">
               <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
               Sin registro · sin cookies · no tomes fotos con personas

@@ -11,9 +11,11 @@ export default function Home() {
 
       <main className="flex-1">
         <section className="border-b border-[color:var(--caliza)] bg-[color:var(--papel)]">
-          <div className="mx-auto flex max-w-3xl flex-col gap-2.5 px-4 py-5 sm:gap-3 sm:px-6 sm:py-14">
-            <span className="etiqueta-especimen">Ciencia ciudadana · Valle del Mezquital</span>
-            <h1 className="font-display text-[1.85rem] font-semibold leading-[1.1] tracking-tight text-[color:var(--tinta)] sm:text-[2.8rem] sm:leading-[1.05]">
+          <div className="mx-auto flex max-w-3xl flex-col gap-2 px-4 py-3 sm:gap-3 sm:px-6 sm:py-14">
+            <span className="etiqueta-especimen !mb-1 !pb-2 sm:!mb-4 sm:!pb-[0.55rem]">
+              Ciencia ciudadana · Valle del Mezquital
+            </span>
+            <h1 className="font-display text-[1.55rem] font-semibold leading-[1.1] tracking-tight text-[color:var(--tinta)] sm:text-[2.8rem] sm:leading-[1.05]">
               Mapea un árbol con{" "}
               <em className="text-[color:var(--terracota)]">heno motita</em>{" "}
               en menos de un minuto.
@@ -21,7 +23,7 @@ export default function Home() {
             <p className="hidden font-mono text-[0.78rem] uppercase tracking-[0.06em] text-[color:var(--corteza)] sm:block">
               Valle del Mezquital, Hidalgo
             </p>
-            <p className="sh-lead mt-1">
+            <p className="sh-lead mt-1 hidden sm:block">
               Toma una foto, comparte tu ubicación y la inteligencia artificial
               estima el nivel de infestación. Tu observación aparece al instante
               en el mapa público para apoyar el control y la prevención de{" "}
@@ -32,10 +34,16 @@ export default function Home() {
           </div>
         </section>
 
-        <div className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6 sm:gap-6 sm:py-10">
+        <div className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-4 sm:gap-6 sm:py-10">
+          <UploadFlow />
+          <p className="sh-lead block sm:hidden">
+            Toma una foto, comparte tu ubicación y la inteligencia artificial
+            estima el nivel de infestación. Tu observación aparece al instante
+            en el mapa público para apoyar el control y la prevención de{" "}
+            <em>Tillandsia recurvata</em>.
+          </p>
           <SeasonalBanner />
           <ImpactStats />
-          <UploadFlow />
         </div>
       </main>
 
