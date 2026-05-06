@@ -70,7 +70,7 @@ export function LocationCapture({ onLocate }: LocationCaptureProps) {
           size="lg"
           onClick={requestGps}
           disabled={loading}
-          className="gap-2 h-14 text-base"
+          className="h-14 w-full gap-2 text-base sm:w-auto"
         >
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />

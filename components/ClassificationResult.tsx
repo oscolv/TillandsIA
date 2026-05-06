@@ -154,21 +154,22 @@ export function ClassificationResultView({
           decisiones de manejo.
         </p>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button
             onClick={onConfirm}
             disabled={submitting}
-            className="flex-1 gap-2"
+            className="w-full gap-2 sm:flex-1"
             size="lg"
           >
             <CheckCircle2 className="h-5 w-5" />
             {submitting ? "Publicando…" : "Confirmar y publicar"}
           </Button>
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={onDiscard}
             disabled={submitting}
             size="lg"
+            className="w-full text-[color:var(--corteza)] hover:text-[color:var(--rojo-alerta)] sm:w-auto"
           >
             Descartar
           </Button>

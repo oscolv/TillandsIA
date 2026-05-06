@@ -152,11 +152,13 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
   }
 
   html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
@@ -165,6 +167,22 @@
     line-height: 1.6;
     font-size: 16px;
     position: relative;
+    overflow-wrap: break-word;
+  }
+
+  button,
+  [role="button"],
+  a.btn,
+  .nav-link,
+  .muni-tag {
+    touch-action: manipulation;
+  }
+
+  /* Inputs nunca deben hacer zoom en iOS Safari (font-size ≥ 16px). */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
   }
 
   /* Textura de papel sutil (heno-motita.mx) */
@@ -572,6 +590,40 @@
   .mini-tag.success { color: var(--mezquite-oscuro); border-color: var(--mezquite-oscuro); }
   .mini-tag.warning { color: var(--terracota); border-color: var(--terracota); }
   .mini-tag.danger  { color: var(--rojo-alerta); border-color: var(--rojo-alerta); }
+
+  /* ─── FAB "Mapear árbol" (móvil, /mapa) ─── */
+  .fab-mapear {
+    position: absolute;
+    right: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.1rem;
+    background: var(--tinta);
+    color: var(--papel);
+    border: 2px solid var(--tinta);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.88rem;
+    letter-spacing: 0.01em;
+    box-shadow: 0 6px 18px rgba(26, 22, 17, 0.22);
+    text-decoration: none;
+    min-height: 48px;
+    transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+  }
+  .fab-mapear:hover,
+  .fab-mapear:focus-visible {
+    background: var(--terracota);
+    border-color: var(--terracota);
+    color: var(--papel);
+    transform: translateY(-1px);
+    outline: none;
+  }
+  .fab-mapear:active {
+    transform: translateY(0);
+  }
 }
 
 /* ─── Override shadcn primitives (sharp) ─── */

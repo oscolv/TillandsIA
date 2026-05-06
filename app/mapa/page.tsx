@@ -1,9 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Filter, X } from "lucide-react";
+import { Camera, Filter, X, ChevronDown, Info } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { MUNICIPALITIES } from "@/lib/municipalities";
 import type { InfestationLevel } from "@/lib/types";
@@ -156,6 +157,14 @@ export default function MapaPage() {
       <div className="relative flex-1">
         <ObservationMap filters={filters} />
         <Legend />
+        <Link
+          href="/"
+          aria-label="Mapear un nuevo árbol"
+          className="fab-mapear sm:hidden"
+        >
+          <Camera className="h-5 w-5" aria-hidden="true" />
+          <span>Mapear árbol</span>
+        </Link>
       </div>
     </div>
   );
@@ -169,10 +178,39 @@ function Legend() {
     { lvl: 3, color: "#f97316", label: "Severa" },
     { lvl: 4, color: "#ef4444", label: "Muy severa" },
   ];
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setCollapsed(false)}
+        aria-label="Mostrar leyenda"
+        className="absolute left-4 z-[1000] inline-flex h-10 w-10 items-center justify-center border border-[color:var(--caliza)] bg-[color:var(--papel)] text-[color:var(--tinta)] shadow-[0_1px_3px_rgba(26,22,17,0.12)] sm:hidden"
+        style={{ bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+      >
+        <Info className="h-4 w-4" aria-hidden="true" />
+      </button>
+    );
+  }
+
   return (
-    <div className="absolute bottom-4 left-4 z-[1000] border border-[color:var(--caliza)] bg-[color:var(--papel)] p-3 text-[0.78rem]">
-      <div className="mb-2 font-mono text-[0.66rem] font-medium uppercase tracking-[0.1em] text-[color:var(--terracota)]">
-        Nivel de infestación
+    <div
+      className="absolute left-4 z-[1000] max-w-[min(15rem,calc(100vw-6rem))] border border-[color:var(--caliza)] bg-[color:var(--papel)] p-3 text-[0.78rem] shadow-[0_1px_3px_rgba(26,22,17,0.08)] sm:max-w-none"
+      style={{ bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+    >
+      <div className="mb-2 flex items-center justify-between gap-3 border-b border-[color:var(--caliza)] pb-1.5 sm:border-0 sm:pb-0">
+        <span className="font-mono text-[0.66rem] font-medium uppercase tracking-[0.1em] text-[color:var(--terracota)]">
+          Nivel de infestación
+        </span>
+        <button
+          type="button"
+          onClick={() => setCollapsed(true)}
+          aria-label="Ocultar leyenda"
+          className="-mr-1 inline-flex h-7 w-7 items-center justify-center text-[color:var(--corteza)] hover:text-[color:var(--tinta)] sm:hidden"
+        >
+          <ChevronDown className="h-4 w-4" aria-hidden="true" />
+        </button>
       </div>
       <ul className="flex flex-col gap-1.5">
         {items.map((it) => (

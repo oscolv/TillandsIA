@@ -14,15 +14,15 @@ import { compressImage } from "@/lib/compress-image";
 import { fetchWithRetry } from "@/lib/fetch-with-retry";
 import { share } from "@/lib/share";
 import {
-  ArrowRight,
   Loader2,
   MapPin,
   Camera,
   CheckCircle2,
   Share2,
+  ShieldCheck,
 } from "lucide-react";
 
-type Step = "intro" | "photo" | "location" | "classifying" | "result" | "submitting" | "done";
+type Step = "photo" | "location" | "classifying" | "result" | "submitting" | "done";
 
 interface FlowState {
   step: Step;
@@ -48,11 +48,10 @@ type Action =
   | { type: "SUBMITTING" }
   | { type: "DONE" }
   | { type: "ERROR"; error: string }
-  | { type: "RESET" }
-  | { type: "GO_TO_PHOTO" };
+  | { type: "RESET" };
 
 const initialState: FlowState = {
-  step: "intro",
+  step: "photo",
   photoFile: null,
   photoPreview: null,
   coords: null,
@@ -64,8 +63,6 @@ const initialState: FlowState = {
 
 function reducer(s: FlowState, a: Action): FlowState {
   switch (a.type) {
-    case "GO_TO_PHOTO":
-      return { ...s, step: "photo", error: null };
     case "PHOTO_TAKEN":
       return {
         ...s,
@@ -225,35 +222,6 @@ export function UploadFlow() {
     <div className="w-full max-w-xl mx-auto flex flex-col gap-6">
       <Stepper step={state.step} />
 
-      {state.step === "intro" && (
-        <Card className="card-editorial">
-          <CardHeader>
-            <span className="badge-science">Empezar</span>
-            <CardTitle>Bienvenido</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <p className="text-[0.95rem] leading-relaxed text-[color:var(--tinta)]">
-              Ayúdanos a mapear el heno motita en el Valle del Mezquital. Solo
-              necesitas tomar una foto del árbol completo (incluyendo el dosel)
-              y compartir tu ubicación.
-            </p>
-            <aside className="nota-campo">
-              <span className="nota-titulo">Privacidad</span>
-              <p className="text-[0.92rem] leading-relaxed text-[color:var(--tinta)]">
-                Sin registro ni cookies. No tomes fotos con personas.
-              </p>
-            </aside>
-            <Button
-              size="lg"
-              onClick={() => dispatch({ type: "GO_TO_PHOTO" })}
-              className="gap-2"
-            >
-              Empezar <ArrowRight className="h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
       {state.step === "photo" && (
         <Card className="card-editorial">
           <CardHeader>
@@ -262,12 +230,20 @@ export function UploadFlow() {
               Toma una foto del árbol
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-[0.92rem] leading-relaxed text-[color:var(--corteza)]">
+              Captura el árbol completo, incluyendo el dosel. Después
+              compartirás tu ubicación.
+            </p>
             <CameraCapture
               onCapture={(file, previewUrl) =>
                 dispatch({ type: "PHOTO_TAKEN", file, previewUrl })
               }
             />
+            <p className="flex items-center gap-1.5 font-mono text-[0.7rem] uppercase tracking-[0.06em] text-[color:var(--corteza)]">
+              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              Sin registro · sin cookies · no tomes fotos con personas
+            </p>
           </CardContent>
         </Card>
       )}
@@ -350,6 +326,7 @@ export function UploadFlow() {
             {state.classification && (
               <Button
                 variant="outline"
+                className="w-full gap-2 sm:w-auto"
                 onClick={async () => {
                   const lvl = state.classification!.level;
                   const lbl = state.classification!.label;
@@ -360,7 +337,6 @@ export function UploadFlow() {
                   });
                   if (method === "clipboard") toast.success("Enlace copiado");
                 }}
-                className="gap-2"
               >
                 <Share2 className="h-4 w-4" aria-hidden="true" />
                 Compartir
@@ -372,7 +348,11 @@ export function UploadFlow() {
 
       {state.error && state.step !== "classifying" && state.step !== "submitting" && (
         <div className="flex justify-center">
-          <Button variant="outline" onClick={() => dispatch({ type: "RESET" })}>
+          <Button
+            variant="outline"
+            onClick={() => dispatch({ type: "RESET" })}
+            className="w-full sm:w-auto"
+          >
             Empezar de nuevo
           </Button>
         </div>
@@ -388,6 +368,7 @@ function Stepper({ step }: { step: Step }) {
     { id: "result", label: "Resultado" },
   ];
   const idx = stepIndex(step);
+  const currentLabel = steps[idx]?.label ?? "";
   return (
     <nav aria-label="Progreso del envío de observación">
       <ol className="flex items-center justify-between font-mono text-[0.7rem] uppercase tracking-[0.06em] sm:text-[0.74rem]">
@@ -403,7 +384,7 @@ function Stepper({ step }: { step: Step }) {
           return (
             <li key={s.id} className="flex flex-1 items-center">
               <span
-                className={`flex h-7 w-7 items-center justify-center border-2 font-mono text-[0.78rem] font-semibold ${
+                className={`flex h-7 w-7 shrink-0 items-center justify-center border-2 font-mono text-[0.78rem] font-semibold ${
                   filled
                     ? "border-[color:var(--tinta)] bg-[color:var(--tinta)] text-[color:var(--papel)]"
                     : "border-[color:var(--caliza)] bg-[color:var(--papel)] text-[color:var(--corteza)]"
@@ -414,7 +395,7 @@ function Stepper({ step }: { step: Step }) {
                 <span aria-hidden="true">{i + 1}</span>
               </span>
               <span
-                className={`ml-2 ${
+                className={`ml-2 hidden sm:inline ${
                   filled ? "text-[color:var(--tinta)]" : "text-[color:var(--corteza)]"
                 }`}
                 aria-hidden="true"
@@ -423,7 +404,7 @@ function Stepper({ step }: { step: Step }) {
               </span>
               {i < steps.length - 1 && (
                 <div
-                  className={`mx-3 h-px flex-1 ${
+                  className={`mx-2 h-px flex-1 sm:mx-3 ${
                     i < idx ? "bg-[color:var(--tinta)]" : "bg-[color:var(--caliza)]"
                   }`}
                   aria-hidden="true"
@@ -433,13 +414,18 @@ function Stepper({ step }: { step: Step }) {
           );
         })}
       </ol>
+      <p
+        className="mt-2 font-mono text-[0.68rem] uppercase tracking-[0.08em] text-[color:var(--corteza)] sm:hidden"
+        aria-hidden="true"
+      >
+        Paso {idx + 1} de {steps.length} · <span className="text-[color:var(--tinta)]">{currentLabel}</span>
+      </p>
     </nav>
   );
 }
 
 function stepIndex(step: Step): number {
   switch (step) {
-    case "intro":
     case "photo":
       return 0;
     case "location":

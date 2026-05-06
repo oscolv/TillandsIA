@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandLogo } from "./BrandLogo";
+import { MobileNavMenu } from "./MobileNavMenu";
 
 interface SiteHeaderProps {
   /** Sub-banda opcional (ej. filtros del mapa) que se renderiza bajo el header. */
@@ -9,10 +10,10 @@ interface SiteHeaderProps {
 export function SiteHeader({ children }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--caliza)] bg-[color:var(--papel)]">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+      <div className="relative mx-auto flex h-16 max-w-5xl items-center justify-between gap-2 px-4 sm:gap-3 sm:px-6">
         <Link
           href="/"
-          className="flex items-center gap-2.5 text-[color:var(--tinta)] no-underline"
+          className="flex min-w-0 items-center gap-2.5 text-[color:var(--tinta)] no-underline"
           aria-label="TillandsIA · Inicio"
         >
           <BrandLogo className="h-8 w-8 shrink-0" title="TillandsIA" />
@@ -25,14 +26,14 @@ export function SiteHeader({ children }: SiteHeaderProps) {
           </span>
         </Link>
 
-        <nav aria-label="Navegación principal">
-          <ul className="flex items-center gap-0">
+        <nav aria-label="Navegación principal" className="flex items-center">
+          <ul className="hidden items-center gap-0 sm:flex">
             <li>
               <Link href="/mapa" className="nav-link">
                 Mapa
               </Link>
             </li>
-            <li className="hidden sm:block">
+            <li>
               <Link href="/sobre" className="nav-link">
                 Sobre
               </Link>
@@ -48,6 +49,15 @@ export function SiteHeader({ children }: SiteHeaderProps) {
               </Link>
             </li>
           </ul>
+
+          <Link
+            href="/"
+            className="btn btn-primary mr-2 px-3 py-2 text-[0.82rem] sm:hidden"
+            aria-label="Subir foto"
+          >
+            Subir foto
+          </Link>
+          <MobileNavMenu />
         </nav>
       </div>
 

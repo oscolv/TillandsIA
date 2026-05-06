@@ -11,7 +11,7 @@ export default function Home() {
 
       <main className="flex-1">
         <section className="border-b border-[color:var(--caliza)] bg-[color:var(--papel)]">
-          <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-6 sm:px-6 sm:py-14">
+          <div className="mx-auto flex max-w-3xl flex-col gap-2.5 px-4 py-5 sm:gap-3 sm:px-6 sm:py-14">
             <span className="etiqueta-especimen">Ciencia ciudadana · Valle del Mezquital</span>
             <h1 className="font-display text-[1.85rem] font-semibold leading-[1.1] tracking-tight text-[color:var(--tinta)] sm:text-[2.8rem] sm:leading-[1.05]">
               Mapea un árbol con{" "}
@@ -32,7 +32,7 @@ export default function Home() {
           </div>
         </section>
 
-        <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-8 sm:py-10">
+        <div className="mx-auto flex w-full max-w-xl flex-col gap-5 px-4 py-6 sm:gap-6 sm:py-10">
           <SeasonalBanner />
           <ImpactStats />
           <UploadFlow />
