@@ -10,7 +10,7 @@
  * Versionado: incrementar SW_VERSION purga las cachés viejas en activate.
  */
 
-const SW_VERSION = "v1";
+const SW_VERSION = "v2";
 const TILE_CACHE = `osm-tiles-${SW_VERSION}`;
 const PHOTO_CACHE = `blob-photos-${SW_VERSION}`;
 const SHELL_CACHE = `shell-${SW_VERSION}`;
