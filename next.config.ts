@@ -16,7 +16,10 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data: https://*.public.blob.vercel-storage.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
   "font-src 'self' data:",
-  "connect-src 'self' https://api.openai.com",
+  // El service worker (sw.js) hace fetch() a tile.openstreetmap.org y a Vercel
+  // Blob para cachear tiles y fotos. Esos fetch() están sujetos a `connect-src`
+  // del CSP servido junto con sw.js, así que ambos orígenes deben estar aquí.
+  "connect-src 'self' https://api.openai.com https://tile.openstreetmap.org https://*.public.blob.vercel-storage.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
