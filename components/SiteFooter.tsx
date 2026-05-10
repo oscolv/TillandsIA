@@ -70,7 +70,16 @@ export function SiteFooter() {
             Ciencia ciudadana del Valle del Mezquital ·{" "}
             <em className="text-[color:var(--tinta)]">Tillandsia recurvata</em>
           </p>
-          <p>Datos públicos, abiertos y anónimos.</p>
+          <p className="flex items-center gap-3">
+            <span>Datos públicos, abiertos y anónimos.</span>
+            <Link
+              href="/admin/revision"
+              className="nav-link px-0 opacity-60 hover:opacity-100"
+              style={{ minHeight: "auto", padding: "2px 0" }}
+            >
+              Curaduría
+            </Link>
+          </p>
         </div>
       </div>
     </footer>
