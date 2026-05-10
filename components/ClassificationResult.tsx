@@ -158,7 +158,7 @@ export function ClassificationResultView({
           <Button
             onClick={onConfirm}
             disabled={submitting}
-            className="w-full gap-2 sm:flex-1"
+            className="h-16 w-full gap-2 text-base sm:flex-1"
             size="lg"
           >
             <CheckCircle2 className="h-5 w-5" />
