@@ -81,6 +81,9 @@ export const observations = pgTable(
     humanReviewStatus: text("human_review_status").notNull().default("pending"),
     humanLevel: smallint("human_level"),
     reviewerNotes: text("reviewer_notes"),
+    // Cuándo el revisor cambió el status fuera de 'pending'. NULL si sigue pendiente.
+    // Sirve para medir tiempo captura → revisión y detectar atascos en la cola.
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     // 'train' | 'val' | 'test' — asignado al exportar el dataset etiquetado.
     trainingSplit: text("training_split"),
   },
@@ -96,6 +99,7 @@ export const observations = pgTable(
       table.humanReviewStatus,
       table.createdAt.desc(),
     ),
+    index("observations_reviewed_at_idx").on(table.reviewedAt.desc()),
   ],
 );
 

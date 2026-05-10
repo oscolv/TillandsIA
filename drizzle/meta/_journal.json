@@ -15,6 +15,13 @@
       "when": 1782000000000,
       "tag": "0001_human_review_and_image_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778412389698,
+      "tag": "0002_reviewed_at_timestamp",
+      "breakpoints": true
     }
   ]
 }

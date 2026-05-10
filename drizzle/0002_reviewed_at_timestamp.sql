@@ -1,0 +1,2 @@
+ALTER TABLE "observations" ADD COLUMN "reviewed_at" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "observations_reviewed_at_idx" ON "observations" USING btree ("reviewed_at" DESC NULLS LAST);

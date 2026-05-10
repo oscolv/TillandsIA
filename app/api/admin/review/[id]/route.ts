@@ -58,6 +58,10 @@ export async function PATCH(
       humanReviewStatus: body.status,
       humanLevel: body.status === "corrected" ? body.humanLevel ?? null : null,
       reviewerNotes: body.reviewerNotes ?? null,
+      // Marca el momento de la revisión. Idempotente: si re-revisas (p. ej.
+      // de 'accepted' a 'corrected') se sobreescribe con la última decisión,
+      // que es lo que el dashboard quiere para "tiempo hasta revisión".
+      reviewedAt: new Date(),
     })
     .where(eq(observations.id, id))
     .returning({
@@ -65,6 +69,7 @@ export async function PATCH(
       humanReviewStatus: observations.humanReviewStatus,
       humanLevel: observations.humanLevel,
       reviewerNotes: observations.reviewerNotes,
+      reviewedAt: observations.reviewedAt,
     });
 
   if (!row) {
@@ -76,5 +81,6 @@ export async function PATCH(
     human_review_status: row.humanReviewStatus,
     human_level: row.humanLevel,
     reviewer_notes: row.reviewerNotes,
+    reviewed_at: row.reviewedAt?.toISOString() ?? null,
   });
 }
