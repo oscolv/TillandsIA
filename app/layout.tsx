@@ -69,8 +69,8 @@ export default function RootLayout({
       className={`${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <head>
-        <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+        <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-icon-180.png" />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ServiceWorkerRegister />
