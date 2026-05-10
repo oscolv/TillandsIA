@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { CameraCapture } from "./CameraCapture";
 import { LocationCapture, type Coords } from "./LocationCapture";
 import { ClassificationResultView } from "./ClassificationResult";
+import { municipalityFor } from "@/lib/municipalities";
 import type { ClassificationResult } from "@/lib/types";
 import { compressImage } from "@/lib/compress-image";
 import { fetchWithRetry } from "@/lib/fetch-with-retry";
@@ -303,6 +304,11 @@ export function UploadFlow() {
           result={state.classification}
           onConfirm={confirm}
           onDiscard={() => dispatch({ type: "RESET" })}
+          municipality={
+            state.coords
+              ? municipalityFor(state.coords.lat, state.coords.lng)
+              : null
+          }
         />
       )}
 

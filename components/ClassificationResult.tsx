@@ -46,6 +46,7 @@ interface ClassificationResultProps {
   onConfirm: () => void;
   onDiscard: () => void;
   submitting?: boolean;
+  municipality?: string | null;
 }
 
 export function ClassificationResultView({
@@ -53,6 +54,7 @@ export function ClassificationResultView({
   onConfirm,
   onDiscard,
   submitting = false,
+  municipality = null,
 }: ClassificationResultProps) {
   const cfg = LEVEL_CONFIG[result.level];
 
@@ -117,7 +119,9 @@ export function ClassificationResultView({
             <p className="text-[0.92rem] leading-relaxed text-[color:var(--tinta)]">
               Los árboles con &gt;50% de cobertura producen miles de semillas
               que infectan a los árboles vecinos. Considera reportar a CONAFOR
-              o al programa municipal de Tula de Allende.
+              {municipality
+                ? ` o al programa municipal de ${municipality}.`
+                : " o a tu autoridad ambiental local."}
             </p>
           </aside>
         )}
