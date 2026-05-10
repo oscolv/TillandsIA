@@ -7,6 +7,7 @@ import {
 import { classifyImage } from "@/lib/classify";
 import { hashIP } from "@/lib/hash-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { hasValidBypassToken } from "@/lib/bypass-token";
 import { cacheClassification, hashImage } from "@/lib/classification-cache";
 
 export const runtime = "nodejs"; // sharp no corre en edge
@@ -17,7 +18,7 @@ export const dynamic = "force-dynamic";
  * POST /api/classify — recibe una foto, la sanitiza y la clasifica.
  *
  * Pipeline:
- *  1. Rate limit por hash de IP (10/h)
+ *  1. Rate limit por hash de IP (30/h normal, 200/h con bypass token)
  *  2. Validar Content-Length antes de leer el body
  *  3. Sanitizar imagen con sharp (re-encode + strip metadata + dim check)
  *  4. Clasificar con GPT-5.4 mini (structured outputs)
@@ -38,9 +39,10 @@ export async function POST(req: Request) {
     );
   }
 
-  let rl: { success: boolean; reset: number };
+  const tier = hasValidBypassToken(req) ? "bypass" : "normal";
+  let rl: { success: boolean; reset: number; limit: number };
   try {
-    rl = await checkRateLimit(`classify:${identifier}`);
+    rl = await checkRateLimit(`classify:${identifier}`, tier);
   } catch (err) {
     console.error("rate-limit error:", err);
     return NextResponse.json(
@@ -53,7 +55,7 @@ export async function POST(req: Request) {
     const retryAfter = Math.max(1, Math.ceil((rl.reset - Date.now()) / 1000));
     return NextResponse.json(
       {
-        error: "Has alcanzado el límite de 10 fotos por hora. Intenta más tarde.",
+        error: `Has alcanzado el límite de ${rl.limit} fotos por hora. Intenta más tarde.`,
       },
       { status: 429, headers: { "Retry-After": String(retryAfter) } },
     );

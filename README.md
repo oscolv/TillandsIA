@@ -107,7 +107,7 @@ El script:
 | Despliegue | Vercel (Fluid Compute, Node runtime) |
 | Almacenamiento de fotos | Vercel Blob |
 | Base de datos | Neon Postgres + Drizzle ORM |
-| Cache / rate-limit | Upstash Redis (sliding window 10/h) |
+| Cache / rate-limit | Upstash Redis (sliding window 30/h, 200/h con bypass) |
 | Clasificación | OpenAI GPT-5.4 mini (structured outputs) |
 | Sanitización | `sharp` (re-encode JPEG sin EXIF) |
 | Mapa | Leaflet + React-Leaflet, tiles de OpenStreetMap |
@@ -199,6 +199,12 @@ ADMIN_TOKEN=
 
 # Opcional
 MAX_PHOTO_MB=10
+
+# Bypass tokens para brigadistas — separados por coma. Cada token sube el
+# tier de rate-limit de 30/h a 200/h por IP. El cliente lo envía vía header
+# `x-bypass-token`. Para distribuirlos, comparte `/setup-token?token=XXX`.
+# Sin esta var (o vacía), el bypass está deshabilitado.
+BYPASS_TOKENS=
 ```
 
 En desarrollo: `vercel env pull .env.local` (requiere `vercel link`).
@@ -320,7 +326,8 @@ lib/
   classification-cache.ts       # sha256 + Upstash get/set (puente classify↔observations)
   sanitize-image.ts             # sharp re-encode + dim check + magic bytes
   hash-ip.ts                    # HMAC-SHA-256 del IP
-  rate-limit.ts                 # Upstash sliding window 10/h
+  rate-limit.ts                 # Upstash sliding window (30/h normal, 200/h bypass)
+  bypass-token.ts               # valida `x-bypass-token` contra BYPASS_TOKENS env
   validate-coords.ts            # bbox del Valle del Mezquital
   municipalities.ts             # mapeo coords → municipio
   db/                           # Drizzle schema + cliente Neon

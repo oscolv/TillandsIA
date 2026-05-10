@@ -6,6 +6,7 @@ import { isInsideMezquital, validateCoords } from "@/lib/validate-coords";
 import { municipalityFor } from "@/lib/municipalities";
 import { hashIP } from "@/lib/hash-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { hasValidBypassToken } from "@/lib/bypass-token";
 import {
   CLASSIFIER_VERSION,
   MODEL_VERSION,
@@ -61,11 +62,12 @@ export async function POST(req: Request) {
     );
   }
 
-  const rl = await checkRateLimit(`obs:${identifier}`);
+  const tier = hasValidBypassToken(req) ? "bypass" : "normal";
+  const rl = await checkRateLimit(`obs:${identifier}`, tier);
   if (!rl.success) {
     const retryAfter = Math.max(1, Math.ceil((rl.reset - Date.now()) / 1000));
     return NextResponse.json(
-      { error: "Límite de 10 observaciones por hora alcanzado." },
+      { error: `Límite de ${rl.limit} observaciones por hora alcanzado.` },
       { status: 429, headers: { "Retry-After": String(retryAfter) } },
     );
   }

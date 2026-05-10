@@ -12,6 +12,7 @@ import { ClassificationResultView } from "./ClassificationResult";
 import type { ClassificationResult } from "@/lib/types";
 import { compressImage } from "@/lib/compress-image";
 import { fetchWithRetry } from "@/lib/fetch-with-retry";
+import { getBypassTokenHeader } from "@/lib/bypass-token-client";
 import { share } from "@/lib/share";
 import {
   Loader2,
@@ -131,6 +132,7 @@ export function UploadFlow() {
       setProgress(35);
       const res = await fetchWithRetry("/api/classify", {
         method: "POST",
+        headers: { ...getBypassTokenHeader() },
         body: formData,
       });
       setProgress(80);
@@ -191,7 +193,10 @@ export function UploadFlow() {
     try {
       const res = await fetchWithRetry("/api/observations", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          ...getBypassTokenHeader(),
+        },
         body: JSON.stringify({
           lat: state.coords.lat,
           lng: state.coords.lng,
