@@ -174,6 +174,7 @@ CREATE TABLE observations (
 | `POST /api/observations` | Persiste tras verificar el hash y leer la classification del cache |
 | `GET /api/observations` | Lista pública para alimentar el mapa |
 | `/admin/revision` | Cola de revisión humana (protegida por `ADMIN_TOKEN`) |
+| `/setup-token` | Configura el bypass token de brigadista en `localStorage` |
 | `GET /api/admin/queue` | Lote de observaciones por estado de revisión |
 | `PATCH /api/admin/review/:id` | Registrar accept / correct / reject |
 | `POST /api/admin/login` | Set-cookie con `ADMIN_TOKEN` |
@@ -255,6 +256,72 @@ O desde el dashboard: Project → Settings → Environment Variables → Add →
 - No lo commitees. `.env*.local` ya está en `.gitignore`.
 - No lo compartas por canales no seguros (Slack/Telegram público). Para el equipo: gestor de contraseñas o `vercel env pull`.
 - Si se filtra: rota con `vercel env rm ADMIN_TOKEN` + `vercel env add ADMIN_TOKEN` + `vercel env pull` y todas las sesiones existentes quedan inválidas (la cookie deja de coincidir).
+
+### Rate limiting y bypass tokens para brigadistas
+
+Toda observación pasa por dos endpoints rate-limited (`POST /api/classify` y `POST /api/observations`). El bucket es por hash HMAC del IP — sin cookies, sin login.
+
+**Dos tiers (`lib/rate-limit.ts`):**
+
+| Tier | Cap | Cuándo |
+|---|---|---|
+| `normal` | 30 / hora | Default. Cualquier visitante. |
+| `bypass` | 200 / hora | La request trae header `x-bypass-token` con un valor presente en `BYPASS_TOKENS`. |
+
+Cada tier vive en su propio keyspace de Upstash (`tillandsia:rl` vs `tillandsia:rl-bypass`), así que las cuentas no se mezclan. El bypass se sigue clavando al IP: el token desbloquea el tier, no es cheque ilimitado contra OpenAI.
+
+**Cómo emitir tokens y distribuirlos:**
+
+1. **Genera un token** (16 bytes ≈ 32 caracteres hex es suficiente):
+
+   ```bash
+   openssl rand -hex 16
+   ```
+
+2. **Súbelo a Vercel.** Puedes tener uno solo o varios separados por coma — uno por brigadista facilita rotar a uno solo si se compromete:
+
+   ```bash
+   vercel env add BYPASS_TOKENS    # pega `tokA` o `tokA,tokB,tokC`
+   vercel env pull .env.local
+   ```
+
+3. **Comparte el token con el brigadista** vía un link de configuración:
+
+   ```
+   https://app.henomotita.mx/setup-token?token=<TOKEN>
+   ```
+
+   El brigadista lo abre **una sola vez** desde su celular. La página `/setup-token` (`app/setup-token/page.tsx`) guarda el token en `localStorage` y limpia el query param de la URL con `history.replaceState` para que no quede en el historial, en screenshots, ni en el header `Referer` de futuras navegaciones.
+
+   De ahí en adelante, ese navegador inyecta automáticamente el header `x-bypass-token` en cada subida (`lib/bypass-token-client.ts` → `components/UploadFlow.tsx`) y cae al tier de 200/h.
+
+**Cómo revocar:**
+
+- **A un brigadista en particular:** dile que entre a `/setup-token?clear=1` (o sólo `/setup-token` y use el botón "Borrar token"). El token se borra de su `localStorage`.
+- **A todos a la vez (token comprometido):** `vercel env rm BYPASS_TOKENS` + `vercel env add BYPASS_TOKENS` con un valor distinto + `vercel env pull`. El navegador del brigadista seguirá enviando el token viejo, pero el servidor lo rechazará y caerá al tier normal de 30/h.
+- **Deshabilitar bypass por completo:** quita `BYPASS_TOKENS` del entorno. Sin la var (o vacía), `hasValidBypassToken` siempre devuelve false y todo el tráfico cae al tier normal.
+
+**Reglas de manejo:**
+
+- Validación con `timingSafeEqual` (`lib/bypass-token.ts`) para no filtrar prefijos por timing.
+- Tokens diferentes a `ADMIN_TOKEN` — no compartas el mismo secreto entre roles.
+- Si quieres saber qué brigadista filtró el token: emite uno por persona (`tokA,tokB,tokC`), no uno solo. La env var no rastrea quién usó cuál, pero al rotar puedes comunicar "rotamos el de Juan" sin tocar a los demás.
+
+**Cómo lo manda el cliente:**
+
+```ts
+// lib/bypass-token-client.ts
+function getBypassTokenHeader(): Record<string, string> {
+  const t = localStorage.getItem("tillandsia_bypass_token");
+  return t ? { "x-bypass-token": t } : {};
+}
+```
+
+`UploadFlow.tsx` lo combina con los headers del fetch:
+
+```ts
+fetch("/api/classify", { method: "POST", headers: { ...getBypassTokenHeader() }, body: formData });
+```
 
 ---
 

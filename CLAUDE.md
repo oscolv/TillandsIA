@@ -79,6 +79,7 @@ CREATE INDEX ON observations (created_at DESC);
 | `/mapa` | Mapa público con todos los registros; clic en pin → foto + datos |
 | `/api/observations` | `GET` lista paginada; `POST` nueva observación |
 | `/api/classify` | `POST` imagen → GPT-5.4 mini Vision → nivel de infestación |
+| `/setup-token` | Configura el bypass token de brigadista en `localStorage` |
 
 ---
 
@@ -126,6 +127,10 @@ DATABASE_URL=
 # Vercel Blob
 BLOB_READ_WRITE_TOKEN=
 
+# Bypass tokens para brigadistas (separados por coma). Suben el rate limit
+# por IP de 30/h a 200/h. Se distribuyen vía /setup-token?token=XXX.
+BYPASS_TOKENS=
+
 # Opcional: límite de tamaño de foto en MB (default: 10)
 MAX_PHOTO_MB=10
 ```
@@ -161,6 +166,9 @@ Open-source, sin cuotas por uso, fácil integración con Next.js, y suficiente p
 
 **¿Por qué Vercel Blob y no S3?**
 Integración nativa con Vercel, latencia baja desde las funciones, URL pública directa sin configuración adicional.
+
+**¿Por qué dos tiers de rate limit (30/h normal, 200/h bypass)?**
+30/h frena bots sin estorbar al ciudadano que sube unas fotos al pasar. En jornadas de campo serias (brigadistas, talleres) 30/h se queda corto, así que existe un tier de 200/h que se desbloquea con un token compartido vía `/setup-token?token=XXX`. El bucket sigue clavado al hash del IP — el token desbloquea el tier, no es cheque ilimitado contra OpenAI. Detalles en `README.md` §"Rate limiting y bypass tokens para brigadistas".
 
 **Flujo de una observación:**
 1. Usuario toma foto en el celular
