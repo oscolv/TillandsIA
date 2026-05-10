@@ -126,7 +126,7 @@ export default async function ReportePage({
         municipality: observations.municipality,
         total: sql<number>`count(*)::int`,
         avgLevel: sql<number | null>`avg(${observations.level})::float`,
-        lastCapture: sql<Date | null>`max(${observations.createdAt})`,
+        lastCapture: sql<Date | string | null>`max(${observations.createdAt})`,
         corrections: sql<number>`sum(case when ${observations.humanReviewStatus} = 'corrected' then 1 else 0 end)::int`,
         reviewed: sql<number>`sum(case when ${observations.humanReviewStatus} in ('accepted','corrected') then 1 else 0 end)::int`,
       })
@@ -968,14 +968,19 @@ function fmtPct(x: number): string {
   return `${(x * 100).toFixed(1)}%`;
 }
 
-function fmtDate(d: Date): string {
+function fmtDate(d: Date | string | null | undefined): string {
+  if (d == null) return "—";
+  // neon-http devuelve timestamps de aggregates como strings ISO; los regulares
+  // como Date. Normalizamos antes de formatear.
+  const date = typeof d === "string" ? new Date(d) : d;
+  if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat("es-MX", {
     day: "2-digit",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(d);
+  }).format(date);
 }
 
 function fmtDuration(seconds: number): string {
