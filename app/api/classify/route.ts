@@ -9,6 +9,7 @@ import { hashIP } from "@/lib/hash-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { hasValidBypassToken } from "@/lib/bypass-token";
 import { cacheClassification, hashImage } from "@/lib/classification-cache";
+import { recordClassificationEvent } from "@/lib/classification-events";
 
 export const runtime = "nodejs"; // sharp no corre en edge
 export const maxDuration = 30; // OpenAI vision puede tardar 5-15 s
@@ -119,11 +120,21 @@ export async function POST(req: Request) {
   }
 
   // 5. Clasificar
+  //    Cualquier salida de aquí en adelante registra un evento en
+  //    `classification_events` para alimentar el dashboard interno
+  //    (% rechazos por motivo, drift de confianza, etc.).
+  const imageHash = hashImage(sanitized);
   try {
     const result = await classifyImage(sanitized);
 
     // Rechazos: rostros o motivo explícito
     if (result.has_human_face || result.rejection_reason) {
+      await recordClassificationEvent({
+        outcome: result.has_human_face ? "rejected_face" : "rejected_other",
+        ipHash: identifier,
+        confidence: result.confidence,
+        imageHash,
+      });
       return NextResponse.json(
         {
           rejected: true,
@@ -138,6 +149,12 @@ export async function POST(req: Request) {
 
     // photo_angle: insufficient → rechazo
     if (result.photo_angle === "insufficient") {
+      await recordClassificationEvent({
+        outcome: "rejected_insufficient",
+        ipHash: identifier,
+        confidence: result.confidence,
+        imageHash,
+      });
       return NextResponse.json(
         {
           rejected: true,
@@ -153,16 +170,28 @@ export async function POST(req: Request) {
     //    `/api/observations` validará que el cliente envíe ese mismo hash
     //    junto con la imagen y leerá la classification de aquí — el cliente
     //    nunca es autoridad sobre level/confidence.
-    const imageHash = hashImage(sanitized);
     try {
       await cacheClassification(imageHash, result);
     } catch (err) {
       console.error("classification-cache error:", err);
+      await recordClassificationEvent({
+        outcome: "error",
+        ipHash: identifier,
+        confidence: result.confidence,
+        imageHash,
+      });
       return NextResponse.json(
         { error: "Configuración del servidor incompleta" },
         { status: 500 },
       );
     }
+
+    await recordClassificationEvent({
+      outcome: "classified",
+      ipHash: identifier,
+      confidence: result.confidence,
+      imageHash,
+    });
 
     return NextResponse.json({
       rejected: false,
@@ -172,6 +201,11 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("classify error:", err);
+    await recordClassificationEvent({
+      outcome: "error",
+      ipHash: identifier,
+      imageHash,
+    });
     return NextResponse.json(
       { error: "Error al clasificar la foto. Intenta de nuevo." },
       { status: 500 },

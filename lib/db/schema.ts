@@ -105,3 +105,67 @@ export const observations = pgTable(
 
 export type ObservationRow = typeof observations.$inferSelect;
 export type ObservationInsert = typeof observations.$inferInsert;
+
+/**
+ * Bitácora de cada llamada a `/api/classify`, exitosa o rechazada.
+ *
+ * Para qué sirve:
+ *  - Tasa de rechazo por motivo a lo largo del tiempo (rostros, foto
+ *    insuficiente, etc.). Un alza repentina de "rejected_face" indica
+ *    que la guía visual de la UI necesita reforzarse.
+ *  - Tasa de abandono: clasificadas que nunca se confirman. Si la confirma
+ *    el usuario, se crea una fila en `observations` con el mismo `image_hash`.
+ *  - Drift de confianza: media diaria/semanal de `confidence` en eventos
+ *    `classified` revela degradación del modelo o cambios estacionales.
+ *
+ * Sin FK a `observations` por simplicidad: la unión se hace por `image_hash`
+ * cuando hace falta. Una clasificación rechazada por el modelo nunca tiene
+ * observación asociada.
+ */
+export const classificationEvents = pgTable(
+  "classification_events",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+
+    // 'classified' | 'rejected_face' | 'rejected_insufficient'
+    //   | 'rejected_other' | 'error'
+    outcome: text("outcome").notNull(),
+
+    // Confianza reportada por el modelo. NULL para `error` o casos donde
+    // no haya un valor numérico (p. ej. el modelo respondió pero el JSON
+    // no parseó). Los `rejected_*` sí pueden traer confianza si el modelo
+    // alcanzó a evaluar la imagen antes del flag.
+    confidence: doublePrecision("confidence"),
+
+    // Privacidad: igual que en `observations`, hash HMAC del IP, nunca el IP.
+    ipHash: text("ip_hash").notNull(),
+
+    // Hash sha256 de la imagen sanitizada. Permite cruzar contra
+    // `observations.image_hash` para distinguir clasificadas-y-confirmadas
+    // de clasificadas-y-abandonadas. NULL si el evento es `error` antes
+    // de obtener una imagen sanitizable.
+    imageHash: text("image_hash"),
+
+    // Versionado del clasificador en el momento del evento. Útil para
+    // segmentar el dashboard por iteración del prompt.
+    classifierVersion: text("classifier_version").notNull(),
+    modelVersion: text("model_version").notNull(),
+  },
+  (table) => [
+    index("classification_events_created_at_idx").on(table.createdAt.desc()),
+    index("classification_events_outcome_idx").on(
+      table.outcome,
+      table.createdAt.desc(),
+    ),
+    index("classification_events_image_hash_idx").on(table.imageHash),
+  ],
+);
+
+export type ClassificationEventRow = typeof classificationEvents.$inferSelect;
+export type ClassificationEventInsert =
+  typeof classificationEvents.$inferInsert;
