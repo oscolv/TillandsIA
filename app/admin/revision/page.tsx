@@ -126,6 +126,13 @@ export default async function RevisionPage({
           </p>
         </div>
         <div className="flex items-end gap-3">
+          <a
+            href="/admin/reporte"
+            className="muni-tag"
+            aria-label="Ver reporte interno del estado del mapeo"
+          >
+            Reporte →
+          </a>
           <ExportButton exportable={exportable} />
           <LogoutButton />
         </div>
