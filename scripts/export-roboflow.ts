@@ -17,7 +17,7 @@ async function main() {
   });
 
   if (result.summary.total === 0) {
-    console.log("No hay observaciones revisadas con image_hash. Nada que exportar.");
+    console.log("No hay observaciones revisadas con fotos válidas. Nada que exportar.");
     return;
   }
 

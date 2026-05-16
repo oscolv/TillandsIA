@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CameraCapture } from "./CameraCapture";
+import { PhotoGallery, MAX_PHOTOS_PER_OBSERVATION } from "./PhotoGallery";
 import { LocationCapture, type Coords } from "./LocationCapture";
 import { ClassificationResultView } from "./ClassificationResult";
 import { municipalityFor } from "@/lib/municipalities";
@@ -22,68 +22,114 @@ import {
   CheckCircle2,
   Share2,
   ShieldCheck,
+  Search,
 } from "lucide-react";
 
-type Step = "photo" | "location" | "classifying" | "result" | "submitting" | "done";
+/** Umbral de confianza por debajo del cual se sugiere un acercamiento. */
+const LOW_CONFIDENCE_THRESHOLD = 0.6;
+
+type Step = "gallery" | "location" | "result" | "submitting" | "done";
+
+interface PhotoEntry {
+  file: File;
+  previewUrl: string;
+}
 
 interface FlowState {
   step: Step;
-  photoFile: File | null;
-  photoPreview: string | null;
+  photos: PhotoEntry[]; // 0–3 fotos del mismo árbol
   coords: Coords | null;
+  classifying: boolean; // hay una llamada a /api/classify en vuelo
   classification: ClassificationResult | null;
-  photoBase64: string | null; // sanitizado por el server, devuelto en /api/classify
-  imageHash: string | null; // sha256 de la foto sanitizada — lo emite /api/classify
+  // Estos arrays son paralelos 1:1 con `photos`, y los emite /api/classify
+  // tras sanitizar cada imagen. Se mandan tal cual a /api/observations.
+  photoBase64s: string[];
+  imageHashes: string[];
+  combinedHash: string | null;
   error: string | null;
 }
 
 type Action =
-  | { type: "PHOTO_TAKEN"; file: File; previewUrl: string }
-  | { type: "LOCATED"; coords: Coords }
-  | { type: "CLASSIFYING" }
+  | { type: "PHOTO_ADDED"; file: File; previewUrl: string }
+  | { type: "PHOTO_REMOVED"; index: number }
+  | { type: "RECLASSIFY_START" }
   | {
       type: "CLASSIFIED";
       classification: ClassificationResult;
-      photoBase64: string;
-      imageHash: string;
+      photos: { base64: string; hash: string }[];
+      combinedHash: string;
     }
+  | { type: "CLASSIFY_FAILED"; error: string }
+  | { type: "GO_TO_LOCATION" }
+  | { type: "LOCATED"; coords: Coords }
   | { type: "SUBMITTING" }
   | { type: "DONE" }
   | { type: "ERROR"; error: string }
   | { type: "RESET" };
 
 const initialState: FlowState = {
-  step: "photo",
-  photoFile: null,
-  photoPreview: null,
+  step: "gallery",
+  photos: [],
   coords: null,
+  classifying: false,
   classification: null,
-  photoBase64: null,
-  imageHash: null,
+  photoBase64s: [],
+  imageHashes: [],
+  combinedHash: null,
   error: null,
 };
 
 function reducer(s: FlowState, a: Action): FlowState {
   switch (a.type) {
-    case "PHOTO_TAKEN":
+    case "PHOTO_ADDED":
+      if (s.photos.length >= MAX_PHOTOS_PER_OBSERVATION) return s;
       return {
         ...s,
-        step: "location",
-        photoFile: a.file,
-        photoPreview: a.previewUrl,
+        photos: [...s.photos, { file: a.file, previewUrl: a.previewUrl }],
+        error: null,
       };
-    case "LOCATED":
-      return { ...s, step: "classifying", coords: a.coords };
-    case "CLASSIFYING":
-      return { ...s, step: "classifying" };
+    case "PHOTO_REMOVED": {
+      const removed = s.photos[a.index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      const nextPhotos = s.photos.filter((_, i) => i !== a.index);
+      // Si ya no queda foto, limpiamos la clasificación pendiente; si quedan,
+      // se va a re-clasificar (el side-effect lo dispara el caller).
+      return {
+        ...s,
+        photos: nextPhotos,
+        classification: nextPhotos.length === 0 ? null : s.classification,
+        photoBase64s: nextPhotos.length === 0 ? [] : s.photoBase64s,
+        imageHashes: nextPhotos.length === 0 ? [] : s.imageHashes,
+        combinedHash: nextPhotos.length === 0 ? null : s.combinedHash,
+        error: null,
+      };
+    }
+    case "RECLASSIFY_START":
+      return { ...s, classifying: true, error: null };
     case "CLASSIFIED":
       return {
         ...s,
-        step: "result",
+        classifying: false,
         classification: a.classification,
-        photoBase64: a.photoBase64,
-        imageHash: a.imageHash,
+        photoBase64s: a.photos.map((p) => p.base64),
+        imageHashes: a.photos.map((p) => p.hash),
+        combinedHash: a.combinedHash,
+        error: null,
       };
+    case "CLASSIFY_FAILED":
+      return {
+        ...s,
+        classifying: false,
+        classification: null,
+        photoBase64s: [],
+        imageHashes: [],
+        combinedHash: null,
+        error: a.error,
+      };
+    case "GO_TO_LOCATION":
+      return { ...s, step: "location", error: null };
+    case "LOCATED":
+      return { ...s, step: "result", coords: a.coords };
     case "SUBMITTING":
       return { ...s, step: "submitting" };
     case "DONE":
@@ -91,6 +137,7 @@ function reducer(s: FlowState, a: Action): FlowState {
     case "ERROR":
       return { ...s, error: a.error };
     case "RESET":
+      for (const p of s.photos) URL.revokeObjectURL(p.previewUrl);
       return initialState;
     default:
       return s;
@@ -102,67 +149,69 @@ export function UploadFlow() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [progress, setProgress] = useState(0);
 
-  async function classify(file: File) {
-    dispatch({ type: "CLASSIFYING" });
-    setProgress(5);
+  async function classifyAll(files: File[]) {
+    if (files.length === 0) return;
+    dispatch({ type: "RECLASSIFY_START" });
+    setProgress(10);
 
-    let photoBlob: Blob;
-    try {
-      const compressed = await compressImage(file);
-      photoBlob = compressed.blob;
-      if (compressed.compressedSize < compressed.originalSize) {
-        const savedKb = Math.round(
-          (compressed.originalSize - compressed.compressedSize) / 1024,
-        );
-        console.info(
-          `[upload] comprimida ${Math.round(compressed.originalSize / 1024)} KB → ${Math.round(
-            compressed.compressedSize / 1024,
-          )} KB (${compressed.width}×${compressed.height}, -${savedKb} KB)`,
-        );
-      }
-    } catch (err) {
-      console.warn("[upload] compresión falló, enviando original:", err);
-      photoBlob = file;
-    }
-    setProgress(20);
+    // Comprimimos en paralelo. Si alguna falla, mandamos el original.
+    const blobs = await Promise.all(
+      files.map(async (file) => {
+        try {
+          const compressed = await compressImage(file);
+          return compressed.blob;
+        } catch (err) {
+          console.warn("[upload] compresión falló, enviando original:", err);
+          return file as Blob;
+        }
+      }),
+    );
+    setProgress(30);
 
     const formData = new FormData();
-    formData.append("photo", photoBlob, "photo.jpg");
+    for (const blob of blobs) {
+      formData.append("photo", blob, "photo.jpg");
+    }
 
     try {
-      setProgress(35);
+      setProgress(50);
       const res = await fetchWithRetry("/api/classify", {
         method: "POST",
         headers: { ...getBypassTokenHeader() },
         body: formData,
       });
-      setProgress(80);
-
+      setProgress(85);
       const data = await res.json();
       setProgress(100);
 
       if (res.status === 429) {
-        dispatch({ type: "ERROR", error: data.error });
+        dispatch({ type: "CLASSIFY_FAILED", error: data.error });
         toast.error(data.error);
         return;
       }
 
       if (data.rejected) {
-        dispatch({ type: "ERROR", error: data.reason });
+        // Rechazo del modelo (rostro, foto insuficiente, etc.) — limpia todo
+        // y deja el mensaje en el banner.
+        dispatch({ type: "RESET" });
         toast.error(data.reason);
+        dispatch({ type: "ERROR", error: data.reason });
         return;
       }
 
       if (!res.ok) {
         const msg = data.error ?? "No se pudo clasificar la foto.";
-        dispatch({ type: "ERROR", error: msg });
+        dispatch({ type: "CLASSIFY_FAILED", error: msg });
         toast.error(msg);
         return;
       }
 
-      if (typeof data.imageHash !== "string") {
+      if (
+        !Array.isArray(data.photos) ||
+        typeof data.combinedHash !== "string"
+      ) {
         const msg = "Respuesta del servidor incompleta. Intenta de nuevo.";
-        dispatch({ type: "ERROR", error: msg });
+        dispatch({ type: "CLASSIFY_FAILED", error: msg });
         toast.error(msg);
         return;
       }
@@ -170,13 +219,26 @@ export function UploadFlow() {
       dispatch({
         type: "CLASSIFIED",
         classification: data.classification,
-        photoBase64: data.photoBase64,
-        imageHash: data.imageHash,
+        photos: data.photos,
+        combinedHash: data.combinedHash,
       });
     } catch {
       const msg = "Sin conexión. Verifica tu red e intenta de nuevo.";
-      dispatch({ type: "ERROR", error: msg });
+      dispatch({ type: "CLASSIFY_FAILED", error: msg });
       toast.error(msg);
+    }
+  }
+
+  function handlePhotoAdded(file: File, previewUrl: string) {
+    dispatch({ type: "PHOTO_ADDED", file, previewUrl });
+    void classifyAll([...state.photos.map((p) => p.file), file]);
+  }
+
+  function handlePhotoRemoved(index: number) {
+    dispatch({ type: "PHOTO_REMOVED", index });
+    const remaining = state.photos.filter((_, i) => i !== index).map((p) => p.file);
+    if (remaining.length > 0) {
+      void classifyAll(remaining);
     }
   }
 
@@ -184,8 +246,9 @@ export function UploadFlow() {
     if (
       !state.classification ||
       !state.coords ||
-      !state.photoBase64 ||
-      !state.imageHash
+      state.photoBase64s.length === 0 ||
+      state.imageHashes.length !== state.photoBase64s.length ||
+      !state.combinedHash
     ) {
       return;
     }
@@ -202,8 +265,11 @@ export function UploadFlow() {
           lat: state.coords.lat,
           lng: state.coords.lng,
           accuracy: state.coords.accuracy,
-          photoBase64: state.photoBase64,
-          imageHash: state.imageHash,
+          photos: state.photoBase64s.map((base64, i) => ({
+            base64,
+            hash: state.imageHashes[i],
+          })),
+          combinedHash: state.combinedHash,
         }),
       });
       const data = await res.json();
@@ -224,32 +290,74 @@ export function UploadFlow() {
     }
   }
 
+  const canContinue =
+    state.photos.length >= 1 &&
+    state.classification !== null &&
+    !state.classifying &&
+    !state.error;
+
   return (
     <div className="w-full max-w-xl mx-auto flex flex-col gap-6">
       <Stepper step={state.step} />
 
-      {state.step === "photo" && (
+      {state.step === "gallery" && (
         <Card className="card-editorial">
           <CardHeader className="!pb-3">
             <CardTitle className="flex items-center gap-2">
               <Camera className="h-5 w-5" />
-              Toma una foto del árbol
+              Fotos del árbol
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <CameraCapture
-              onCapture={(file, previewUrl) =>
-                dispatch({ type: "PHOTO_TAKEN", file, previewUrl })
-              }
+          <CardContent className="flex flex-col gap-4">
+            <PhotoGallery
+              previews={state.photos.map((p) => p.previewUrl)}
+              onAdd={handlePhotoAdded}
+              onRemove={handlePhotoRemoved}
+              busy={state.classifying}
             />
-            <p className="text-[0.9rem] leading-relaxed text-[color:var(--corteza)]">
-              Captura el árbol completo, incluyendo el dosel. Después
-              compartirás tu ubicación.
-            </p>
-            <p className="flex items-center gap-1.5 font-mono text-[0.7rem] uppercase tracking-[0.06em] text-[color:var(--corteza)]">
-              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-              Sin registro · sin cookies · no tomes fotos con personas
-            </p>
+
+            {state.photos.length === 0 && (
+              <p className="text-[0.9rem] leading-relaxed text-[color:var(--corteza)]">
+                Captura el árbol completo, incluyendo el dosel. Después
+                podrás agregar más fotos del mismo árbol si quieres mejorar
+                la identificación.
+              </p>
+            )}
+
+            <ClassificationBanner
+              classifying={state.classifying}
+              classification={state.classification}
+              canAddMore={state.photos.length < MAX_PHOTOS_PER_OBSERVATION}
+            />
+
+            {state.classifying && (
+              <Progress
+                value={progress}
+                aria-label={`Progreso del análisis: ${progress}%`}
+              />
+            )}
+
+            {state.photos.length === 0 && (
+              <p className="flex items-center gap-1.5 font-mono text-[0.7rem] uppercase tracking-[0.06em] text-[color:var(--corteza)]">
+                <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                Sin registro · sin cookies · no tomes fotos con personas
+              </p>
+            )}
+
+            {state.photos.length >= 1 && (
+              <Button
+                size="lg"
+                onClick={() => dispatch({ type: "GO_TO_LOCATION" })}
+                disabled={!canContinue}
+                className="h-14 w-full gap-2 text-base"
+              >
+                {state.classifying
+                  ? "Analizando…"
+                  : `Continuar con ${state.photos.length} ${
+                      state.photos.length === 1 ? "foto" : "fotos"
+                    }`}
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
@@ -264,37 +372,8 @@ export function UploadFlow() {
           </CardHeader>
           <CardContent>
             <LocationCapture
-              onLocate={(coords) => {
-                dispatch({ type: "LOCATED", coords });
-                // arranca clasificación automáticamente — pasamos el File
-                // por argumento (no por state) para evitar closure stale.
-                if (state.photoFile) {
-                  void classify(state.photoFile);
-                }
-              }}
+              onLocate={(coords) => dispatch({ type: "LOCATED", coords })}
             />
-          </CardContent>
-        </Card>
-      )}
-
-      {state.step === "classifying" && (
-        <Card className="card-editorial" aria-busy="true" aria-live="polite">
-          <CardHeader>
-            <span className="badge-science">Análisis</span>
-            <CardTitle className="flex items-center gap-2">
-              <Loader2 className="h-5 w-5 animate-spin text-[color:var(--mezquite-oscuro)]" aria-hidden="true" />
-              Analizando la foto…
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <Progress
-              value={progress}
-              aria-label={`Progreso del análisis: ${progress}%`}
-            />
-            <p className="text-[0.92rem] leading-relaxed text-[color:var(--corteza)]">
-              El modelo está identificando heno motita y estimando el nivel de
-              infestación.
-            </p>
           </CardContent>
         </Card>
       )}
@@ -357,7 +436,7 @@ export function UploadFlow() {
         </Card>
       )}
 
-      {state.error && state.step !== "classifying" && state.step !== "submitting" && (
+      {state.error && state.step !== "submitting" && state.step !== "gallery" && (
         <div className="flex justify-center">
           <Button
             variant="outline"
@@ -372,9 +451,66 @@ export function UploadFlow() {
   );
 }
 
+/**
+ * Banner inline que se muestra debajo de la galería:
+ *  - Mientras clasifica: nada (el Progress se muestra debajo).
+ *  - Si la confianza es baja o no se identificó especie y aún se pueden
+ *    agregar fotos: banner ámbar sugiriendo un acercamiento.
+ *  - Si la especie quedó identificada con confianza buena: banner verde
+ *    con la especie + invitación a continuar.
+ */
+function ClassificationBanner({
+  classifying,
+  classification,
+  canAddMore,
+}: {
+  classifying: boolean;
+  classification: ClassificationResult | null;
+  canAddMore: boolean;
+}) {
+  if (classifying || !classification) return null;
+
+  const lowConfidence =
+    classification.confidence < LOW_CONFIDENCE_THRESHOLD ||
+    classification.tree_species === null;
+
+  if (lowConfidence && canAddMore) {
+    return (
+      <aside className="nota-campo warning" aria-live="polite">
+        <span className="nota-titulo flex items-center gap-2">
+          <Search className="h-3.5 w-3.5" aria-hidden="true" />
+          Identificación incierta
+        </span>
+        <p className="text-[0.92rem] leading-relaxed text-[color:var(--tinta)]">
+          La IA no logró identificar la especie con seguridad. Te
+          sugerimos tomar un acercamiento de las ramas para que pueda
+          clasificar mejor.
+        </p>
+      </aside>
+    );
+  }
+
+  return (
+    <aside className="nota-campo" aria-live="polite">
+      <span className="nota-titulo flex items-center gap-2">
+        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+        Identificación lista
+      </span>
+      <p className="text-[0.92rem] leading-relaxed text-[color:var(--tinta)]">
+        {classification.tree_species_common
+          ? `Especie identificada: ${classification.tree_species_common}.`
+          : "Listo para continuar."}{" "}
+        {canAddMore
+          ? "Puedes continuar o agregar otra foto del mismo árbol."
+          : "Continúa para registrar la ubicación."}
+      </p>
+    </aside>
+  );
+}
+
 function Stepper({ step }: { step: Step }) {
   const steps = [
-    { id: "photo", label: "Foto" },
+    { id: "gallery", label: "Fotos" },
     { id: "location", label: "Ubicación" },
     { id: "result", label: "Resultado" },
   ];
@@ -437,11 +573,10 @@ function Stepper({ step }: { step: Step }) {
 
 function stepIndex(step: Step): number {
   switch (step) {
-    case "photo":
+    case "gallery":
       return 0;
     case "location":
       return 1;
-    case "classifying":
     case "result":
     case "submitting":
     case "done":

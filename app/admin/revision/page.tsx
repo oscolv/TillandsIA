@@ -36,7 +36,7 @@ export default async function RevisionPage({
         lat: observations.lat,
         lng: observations.lng,
         accuracy: observations.accuracy,
-        photoUrl: observations.photoUrl,
+        photoUrls: observations.photoUrls,
         level: observations.level,
         label: observations.label,
         confidence: observations.confidence,
@@ -50,7 +50,7 @@ export default async function RevisionPage({
         humanLevel: observations.humanLevel,
         reviewerNotes: observations.reviewerNotes,
         trainingSplit: observations.trainingSplit,
-        imageHash: observations.imageHash,
+        imageHashes: observations.imageHashes,
       })
       .from(observations)
       .where(
@@ -71,7 +71,7 @@ export default async function RevisionPage({
       .where(
         and(
           inArray(observations.humanReviewStatus, ["accepted", "corrected"]),
-          isNotNull(observations.imageHash),
+          isNotNull(observations.imageHashes),
         ),
       ),
   ]);
@@ -85,7 +85,7 @@ export default async function RevisionPage({
       lat: r.lat,
       lng: r.lng,
       accuracy: r.accuracy,
-      photo_url: r.photoUrl,
+      photo_urls: r.photoUrls,
       level: r.level as InfestationLevel,
       label: r.label,
       confidence: r.confidence,
@@ -99,7 +99,7 @@ export default async function RevisionPage({
       human_level: r.humanLevel as InfestationLevel | null,
       reviewer_notes: r.reviewerNotes,
       training_split: r.trainingSplit as TrainingSplit | null,
-      image_hash: r.imageHash,
+      image_hashes: r.imageHashes,
     }),
   );
 

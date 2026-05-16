@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PhotoCarousel } from "./PhotoCarousel";
 import type { InfestationLevel, PublicObservation } from "@/lib/types";
 
 // Centro del Valle del Mezquital (aprox. Ixmiquilpan)
@@ -119,11 +120,9 @@ export function ObservationMap({ filters }: { filters?: MapFilters }) {
         >
           <Popup minWidth={220}>
             <div className="flex flex-col gap-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={o.photo_url}
+              <PhotoCarousel
+                urls={o.photo_urls}
                 alt={`Árbol con infestación nivel ${o.level}`}
-                className="w-full h-auto rounded"
               />
               <div className="text-xs">
                 <strong>Nivel {o.level}</strong> — {o.label}

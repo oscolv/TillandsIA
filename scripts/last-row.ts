@@ -13,7 +13,8 @@ async function main() {
            flagged, flag_reasons, infestation_active, photo_angle,
            classifier_version, model_version,
            length(ip_hash) AS ip_hash_len,
-           photo_url
+           photo_urls,
+           image_hashes
     FROM observations
     ORDER BY created_at DESC
     LIMIT 3

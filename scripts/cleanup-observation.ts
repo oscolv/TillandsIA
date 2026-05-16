@@ -2,7 +2,7 @@ import { neon } from "@neondatabase/serverless";
 import { del } from "@vercel/blob";
 
 /**
- * Borra una observación específica + su foto de Blob.
+ * Borra una observación específica + todas sus fotos de Blob (1–3).
  * Uso: tsx scripts/cleanup-observation.ts <observation-id>
  */
 async function main() {
@@ -20,7 +20,7 @@ async function main() {
   const sql = neon(dbUrl);
 
   const rows = await sql`
-    SELECT id, photo_url, tree_species_common, label
+    SELECT id, photo_urls, tree_species_common, label
     FROM observations
     WHERE id = ${id}
   `;
@@ -28,17 +28,28 @@ async function main() {
     console.log(`No existe observación con id ${id}`);
     return;
   }
-  const obs = rows[0];
+  const obs = rows[0] as {
+    id: string;
+    photo_urls: string[];
+    tree_species_common: string | null;
+    label: string;
+  };
   console.log(`Encontrada: ${obs.tree_species_common ?? "?"} — ${obs.label}`);
-  console.log(`Photo: ${obs.photo_url}`);
+  console.log(`Fotos (${obs.photo_urls.length}):`);
+  for (const url of obs.photo_urls) console.log(`  - ${url}`);
 
-  // Borrar foto de Blob
-  try {
-    await del(obs.photo_url);
-    console.log("✓ Foto borrada de Vercel Blob");
-  } catch (err) {
-    console.warn("⚠ No se pudo borrar foto de Blob (puede que ya no exista):", err);
-  }
+  // Borrar todas las fotos de Blob en paralelo. Si alguna ya no existe, se
+  // ignora (el script tolera huérfanas para no romper el cleanup global).
+  await Promise.all(
+    obs.photo_urls.map(async (url) => {
+      try {
+        await del(url);
+        console.log(`✓ Borrada: ${url}`);
+      } catch (err) {
+        console.warn(`⚠ No se pudo borrar (puede que ya no exista): ${url}`, err);
+      }
+    }),
+  );
 
   // Borrar fila de DB
   await sql`DELETE FROM observations WHERE id = ${id}`;

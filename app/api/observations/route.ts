@@ -12,6 +12,7 @@ import {
   MODEL_VERSION,
 } from "@/lib/classify";
 import {
+  deriveHashes,
   getCachedClassification,
   hashImage,
 } from "@/lib/classification-cache";
@@ -25,22 +26,33 @@ export const dynamic = "force-dynamic";
 
 /**
  * sha256 hex tiene 64 chars. Strict para evitar payloads malformados.
+ * Cada observación lleva 1–3 fotos del mismo árbol; el orden se conserva
+ * porque el combinedHash depende de él.
  */
+const PhotoSchema = z.object({
+  base64: z.string().min(1),
+  hash: z.string().regex(/^[a-f0-9]{64}$/, "hash debe ser sha256 hex"),
+});
+
 const NewObservationSchema = z.object({
   lat: z.number().finite(),
   lng: z.number().finite(),
   accuracy: z.number().finite().nullable(),
-  photoBase64: z.string().min(1),
-  imageHash: z.string().regex(/^[a-f0-9]{64}$/, "imageHash debe ser sha256 hex"),
+  photos: z.array(PhotoSchema).min(1).max(3),
+  combinedHash: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/, "combinedHash debe ser sha256 hex"),
 });
 
 /**
  * POST /api/observations — guarda la observación tras confirmación del usuario.
  *
- * Integridad classification ↔ imagen:
- *  - El cliente NO envía level/confidence/etc. Solo `imageHash` + `photoBase64`.
- *  - El servidor recalcula sha256(photoBase64) y verifica que coincide con `imageHash`.
- *  - El servidor lee la classification del cache de Redis usando `imageHash`.
+ * Integridad classification ↔ imágenes:
+ *  - El cliente NO envía level/confidence/etc. Solo `photos: [{base64, hash}]`
+ *    (1–3 fotos en orden de subida) y `combinedHash`.
+ *  - El servidor recalcula sha256 de cada base64 y verifica el hash 1:1.
+ *  - Recomputa combinedHash sobre los hashes individuales en orden y compara.
+ *  - Lee la classification del cache de Redis usando `combinedHash`.
  *  - Si el cache expiró (TTL 15 min) → 410 y el usuario debe volver a clasificar.
  *
  * Defensa en profundidad:
@@ -89,21 +101,42 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: coordsErr }, { status: 400 });
   }
 
-  // Decode base64 → buffer
-  let photoBuf: Buffer;
-  try {
-    photoBuf = Buffer.from(payload.photoBase64, "base64");
-    if (photoBuf.length === 0) throw new Error("buffer vacío");
-  } catch {
-    return NextResponse.json({ error: "Foto base64 inválida" }, { status: 400 });
+  // Decode cada base64 → buffer y verificar hash individual 1:1.
+  // Si alguno no cuadra, el cliente está intentando montar la classification
+  // sobre fotos distintas a las que el modelo vio.
+  const photoBufs: Buffer[] = [];
+  for (let i = 0; i < payload.photos.length; i++) {
+    const p = payload.photos[i];
+    let buf: Buffer;
+    try {
+      buf = Buffer.from(p.base64, "base64");
+      if (buf.length === 0) throw new Error("buffer vacío");
+    } catch {
+      return NextResponse.json(
+        { error: `Foto ${i + 1} base64 inválida` },
+        { status: 400 },
+      );
+    }
+    if (hashImage(buf) !== p.hash) {
+      return NextResponse.json(
+        {
+          error: `El hash de la foto ${i + 1} no corresponde con la imagen enviada.`,
+        },
+        { status: 400 },
+      );
+    }
+    photoBufs.push(buf);
   }
 
-  // Verificar que el imageHash declarado por el cliente realmente corresponde a la foto.
-  // Si no coincide, el cliente está intentando montar una classification sobre otra imagen.
-  const expectedHash = hashImage(photoBuf);
-  if (expectedHash !== payload.imageHash) {
+  // Recomputar combinedHash sobre los hashes individuales en orden de subida
+  // y comparar con el declarado. Esto detecta reordenamientos en cliente.
+  const { combined: recomputedCombined } = deriveHashes(photoBufs);
+  if (recomputedCombined !== payload.combinedHash) {
     return NextResponse.json(
-      { error: "El hash de la imagen no corresponde con la foto enviada." },
+      {
+        error:
+          "El conjunto de fotos no corresponde con la sesión clasificada (combinedHash distinto).",
+      },
       { status: 400 },
     );
   }
@@ -111,7 +144,7 @@ export async function POST(req: Request) {
   // Leer la classification real desde el cache (es la del servidor, no del cliente).
   let classification;
   try {
-    classification = await getCachedClassification(payload.imageHash);
+    classification = await getCachedClassification(payload.combinedHash);
   } catch (err) {
     console.error("classification-cache read error:", err);
     return NextResponse.json(
@@ -123,7 +156,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error:
-          "La sesión de clasificación expiró o no existe. Toma la foto de nuevo.",
+          "La sesión de clasificación expiró o no existe. Toma las fotos de nuevo.",
       },
       { status: 410 },
     );
@@ -146,14 +179,16 @@ export async function POST(req: Request) {
     flagged = true;
   }
 
-  // Subir a Blob
-  let photo_url: string;
+  // Subir todas las fotos a Blob en paralelo. Si una falla, abortar — no se
+  // crea la observación parcial; Vercel Blob deja huérfanas las que ya subieron
+  // (cleanup posterior con scripts/cleanup-blob-orphans.ts).
+  let photo_urls: string[];
   try {
-    photo_url = await uploadPhoto(photoBuf);
+    photo_urls = await Promise.all(photoBufs.map((b) => uploadPhoto(b)));
   } catch (err) {
     console.error("blob upload error:", err);
     return NextResponse.json(
-      { error: "No se pudo guardar la foto. Intenta de nuevo." },
+      { error: "No se pudieron guardar las fotos. Intenta de nuevo." },
       { status: 500 },
     );
   }
@@ -171,7 +206,7 @@ export async function POST(req: Request) {
         lat: payload.lat,
         lng: payload.lng,
         accuracy: payload.accuracy,
-        photoUrl: photo_url,
+        photoUrls: photo_urls,
         level: classification.level,
         label: classification.label,
         confidence: classification.confidence,
@@ -188,7 +223,7 @@ export async function POST(req: Request) {
         classifierVersion: CLASSIFIER_VERSION,
         modelVersion: MODEL_VERSION,
         ipHash: identifier,
-        imageHash: payload.imageHash,
+        imageHashes: payload.photos.map((p) => p.hash),
       })
       .returning({ id: observations.id, createdAt: observations.createdAt });
 
@@ -242,7 +277,7 @@ export async function GET(req: Request) {
       lng: observations.lng,
       level: observations.level,
       label: observations.label,
-      photoUrl: observations.photoUrl,
+      photoUrls: observations.photoUrls,
       treeSpecies: observations.treeSpecies,
       treeSpeciesCommon: observations.treeSpeciesCommon,
       aiNotes: observations.aiNotes,
@@ -261,7 +296,7 @@ export async function GET(req: Request) {
     lng: r.lng,
     level: r.level as InfestationLevel,
     label: r.label || LEVEL_LABELS[r.level as InfestationLevel],
-    photo_url: r.photoUrl,
+    photo_urls: r.photoUrls,
     tree_species: r.treeSpecies,
     tree_species_common: r.treeSpeciesCommon,
     ai_notes: r.aiNotes,

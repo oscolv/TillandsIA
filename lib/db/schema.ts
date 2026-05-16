@@ -11,7 +11,8 @@ import {
 import { sql } from "drizzle-orm";
 
 /**
- * Una observación = una foto geo-referenciada de un árbol clasificado por el modelo.
+ * Una observación = 1–3 fotos geo-referenciadas del MISMO árbol, con una
+ * única clasificación agregada por el modelo.
  *
  * Campos sensibles a privacidad:
  * - `ip_hash`: HMAC-SHA-256 del IP con `RATE_LIMIT_SALT`. Nunca el IP plano.
@@ -43,8 +44,12 @@ export const observations = pgTable(
     accuracy: doublePrecision("accuracy"),
     municipality: text("municipality"),
 
-    // Foto
-    photoUrl: text("photo_url").notNull(),
+    // Fotos del mismo árbol (1–3). Mantener orden en que las tomó el usuario;
+    // imageHashes[] es paralelo 1:1 con photoUrls[].
+    photoUrls: text("photo_urls")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
 
     // Clasificación
     level: smallint("level").notNull(),
@@ -72,9 +77,9 @@ export const observations = pgTable(
     modelVersion: text("model_version").notNull(),
     ipHash: text("ip_hash").notNull(),
 
-    // Integridad: sha256 hex de la imagen sanitizada que el modelo vio.
-    // Nullable para registros legacy anteriores a la migración.
-    imageHash: text("image_hash"),
+    // Integridad: sha256 hex de cada imagen sanitizada que el modelo vio,
+    // paralelo 1:1 con photoUrls. Nullable para registros legacy.
+    imageHashes: text("image_hashes").array(),
 
     // Revisión humana — convierte el dataset de etiquetas IA en uno corregido.
     // Estados: pending | accepted | corrected | rejected.
@@ -94,7 +99,7 @@ export const observations = pgTable(
     index("observations_flagged_idx")
       .on(table.flagged)
       .where(sql`${table.flagged} = true`),
-    index("observations_image_hash_idx").on(table.imageHash),
+    index("observations_image_hashes_gin").using("gin", table.imageHashes),
     index("observations_review_idx").on(
       table.humanReviewStatus,
       table.createdAt.desc(),
@@ -114,12 +119,15 @@ export type ObservationInsert = typeof observations.$inferInsert;
  *    insuficiente, etc.). Un alza repentina de "rejected_face" indica
  *    que la guía visual de la UI necesita reforzarse.
  *  - Tasa de abandono: clasificadas que nunca se confirman. Si la confirma
- *    el usuario, se crea una fila en `observations` con el mismo `image_hash`.
+ *    el usuario, se crea una fila en `observations` cuyo `image_hashes`
+ *    contiene `classification_events.image_hash` (hash de la primera foto
+ *    de la sesión).
  *  - Drift de confianza: media diaria/semanal de `confidence` en eventos
  *    `classified` revela degradación del modelo o cambios estacionales.
  *
- * Sin FK a `observations` por simplicidad: la unión se hace por `image_hash`
- * cuando hace falta. Una clasificación rechazada por el modelo nunca tiene
+ * Sin FK a `observations` por simplicidad: la unión se hace con
+ * `WHERE classification_events.image_hash = ANY(observations.image_hashes)`
+ * (índice GIN sobre `image_hashes`). Una clasificación rechazada nunca tiene
  * observación asociada.
  */
 export const classificationEvents = pgTable(
@@ -145,10 +153,10 @@ export const classificationEvents = pgTable(
     // Privacidad: igual que en `observations`, hash HMAC del IP, nunca el IP.
     ipHash: text("ip_hash").notNull(),
 
-    // Hash sha256 de la imagen sanitizada. Permite cruzar contra
-    // `observations.image_hash` para distinguir clasificadas-y-confirmadas
-    // de clasificadas-y-abandonadas. NULL si el evento es `error` antes
-    // de obtener una imagen sanitizable.
+    // Hash sha256 de la PRIMERA foto sanitizada de la sesión. Permite cruzar
+    // contra `observations.image_hashes` (vía `ANY()`) para distinguir
+    // clasificadas-y-confirmadas de clasificadas-y-abandonadas. NULL si el
+    // evento es `error` antes de obtener una imagen sanitizable.
     imageHash: text("image_hash"),
 
     // Versionado del clasificador en el momento del evento. Útil para

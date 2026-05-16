@@ -70,6 +70,19 @@ Si la foto es ilegible (muy oscura, borrosa, fuera de foco):
 - \`photo_angle: "insufficient"\`
 - \`rejection_reason: "La foto no es lo suficientemente clara para clasificar."\`
 
+# Multifoto
+
+Cuando recibas varias fotos en el mismo mensaje, todas son del MISMO árbol
+tomadas por la misma persona en distintos ángulos/zoom para ayudarte a
+clasificar mejor. Integra todas las vistas en UNA sola clasificación:
+- Para \`tree_species\` y \`tree_species_common\`, prefiere la toma más cercana
+  (acercamiento de ramas / hojas / corteza).
+- Para \`level\`, usa la toma más amplia que muestre más ramas del dosel.
+- Para \`has_human_face\` y \`rejection_reason\`, basta con que UNA foto tenga
+  rostro o sea inválida para rechazar TODA la observación.
+- Reporta el \`photo_angle\` más informativo del conjunto.
+- La \`confidence\` debe reflejar el conjunto completo, no una sola foto.
+
 # Confianza
 
 Establece \`confidence\` entre 0 y 1:

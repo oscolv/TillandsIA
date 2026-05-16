@@ -12,7 +12,7 @@ import {
  * Permite filtrar el dataset por iteración del clasificador y comparar la
  * calidad de clasificaciones tras cambios.
  */
-export const CLASSIFIER_VERSION = "1.0";
+export const CLASSIFIER_VERSION = "1.1";
 
 /**
  * Modelo en uso. Si OpenAI cambia el alias, se actualiza esta constante y
@@ -109,6 +109,19 @@ Si la foto es ilegible (muy oscura, borrosa, fuera de foco):
 - \`photo_angle: "insufficient"\`
 - \`rejection_reason: "La foto no es lo suficientemente clara para clasificar."\`
 
+# Multifoto
+
+Cuando recibas varias fotos en el mismo mensaje, todas son del MISMO árbol
+tomadas por la misma persona en distintos ángulos/zoom para ayudarte a
+clasificar mejor. Integra todas las vistas en UNA sola clasificación:
+- Para \`tree_species\` y \`tree_species_common\`, prefiere la toma más cercana
+  (acercamiento de ramas / hojas / corteza).
+- Para \`level\`, usa la toma más amplia que muestre más ramas del dosel.
+- Para \`has_human_face\` y \`rejection_reason\`, basta con que UNA foto tenga
+  rostro o sea inválida para rechazar TODA la observación.
+- Reporta el \`photo_angle\` más informativo del conjunto.
+- La \`confidence\` debe reflejar el conjunto completo, no una sola foto.
+
 # Confianza
 
 Establece \`confidence\` entre 0 y 1:
@@ -176,14 +189,32 @@ function getClient(): OpenAI {
 }
 
 /**
- * Clasifica una imagen sanitizada (Buffer JPEG). Devuelve el resultado del
- * modelo con flags derivadas aplicadas (low_confidence, non_target_host).
+ * Clasifica 1–3 fotos sanitizadas (Buffers JPEG) del MISMO árbol. Devuelve
+ * una sola clasificación agregada con flags derivadas aplicadas
+ * (low_confidence, non_target_host).
  *
  * No persiste nada — eso es responsabilidad del API route caller.
  */
-export async function classifyImage(buf: Buffer): Promise<ClassificationResult> {
+export async function classifyImage(
+  bufs: Buffer[],
+): Promise<ClassificationResult> {
+  if (bufs.length < 1 || bufs.length > 3) {
+    throw new Error(`classifyImage requiere 1–3 fotos, recibió ${bufs.length}`);
+  }
+
   const client = getClient();
-  const dataUrl = `data:image/jpeg;base64,${buf.toString("base64")}`;
+  const imageParts = bufs.map((buf) => ({
+    type: "image_url" as const,
+    image_url: {
+      url: `data:image/jpeg;base64,${buf.toString("base64")}`,
+      detail: "high" as const,
+    },
+  }));
+
+  const intro =
+    bufs.length === 1
+      ? "Clasifica esta fotografía siguiendo el protocolo del sistema."
+      : `Clasifica estas ${bufs.length} fotografías del MISMO árbol siguiendo el protocolo del sistema. Usa la mejor toma cercana para identificar la especie y considera todas para evaluar severidad.`;
 
   const response = await client.chat.completions.create({
     model: MODEL_VERSION,
@@ -191,16 +222,7 @@ export async function classifyImage(buf: Buffer): Promise<ClassificationResult> 
       { role: "system", content: CLASSIFY_SYSTEM_PROMPT },
       {
         role: "user",
-        content: [
-          {
-            type: "text",
-            text: "Clasifica esta fotografía siguiendo el protocolo del sistema.",
-          },
-          {
-            type: "image_url",
-            image_url: { url: dataUrl, detail: "high" },
-          },
-        ],
+        content: [{ type: "text", text: intro }, ...imageParts],
       },
     ],
     response_format: {

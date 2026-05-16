@@ -207,7 +207,7 @@ export default async function ReportePage({
     db
       .select({
         classified: sql<number>`count(*) filter (where ${classificationEvents.outcome} = 'classified')::int`,
-        confirmed: sql<number>`count(distinct ${classificationEvents.imageHash}) filter (where ${classificationEvents.outcome} = 'classified' and exists (select 1 from ${observations} o where o.image_hash = ${classificationEvents.imageHash}))::int`,
+        confirmed: sql<number>`count(distinct ${classificationEvents.imageHash}) filter (where ${classificationEvents.outcome} = 'classified' and exists (select 1 from ${observations} o where ${classificationEvents.imageHash} = ANY(o.image_hashes)))::int`,
       })
       .from(classificationEvents)
       .where(sinceCondEvents),

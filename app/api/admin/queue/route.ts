@@ -61,7 +61,7 @@ export async function GET(req: Request) {
       lat: observations.lat,
       lng: observations.lng,
       accuracy: observations.accuracy,
-      photoUrl: observations.photoUrl,
+      photoUrls: observations.photoUrls,
       level: observations.level,
       label: observations.label,
       confidence: observations.confidence,
@@ -75,7 +75,7 @@ export async function GET(req: Request) {
       humanLevel: observations.humanLevel,
       reviewerNotes: observations.reviewerNotes,
       trainingSplit: observations.trainingSplit,
-      imageHash: observations.imageHash,
+      imageHashes: observations.imageHashes,
     })
     .from(observations)
     .where(where)
@@ -102,7 +102,7 @@ export async function GET(req: Request) {
       lat: r.lat,
       lng: r.lng,
       accuracy: r.accuracy,
-      photo_url: r.photoUrl,
+      photo_urls: r.photoUrls,
       level: r.level,
       label: r.label,
       confidence: r.confidence,
@@ -116,7 +116,7 @@ export async function GET(req: Request) {
       human_level: r.humanLevel,
       reviewer_notes: r.reviewerNotes,
       training_split: r.trainingSplit,
-      image_hash: r.imageHash,
+      image_hashes: r.imageHashes,
     })),
     next_cursor: nextCursor,
     counts: Object.fromEntries(counts.map((c) => [c.status, c.n])),

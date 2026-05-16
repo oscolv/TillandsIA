@@ -8,7 +8,7 @@ interface Row {
   lat: number;
   lng: number;
   accuracy: number | null;
-  photo_url: string;
+  photo_urls: string[];
   level: number;
   label: string;
   confidence: number | null;
@@ -19,7 +19,7 @@ interface Row {
   human_level: number | null;
   reviewer_notes: string | null;
   training_split: string | null;
-  image_hash: string | null;
+  image_hashes: string[] | null;
 }
 
 export interface ExportFile {
@@ -77,9 +77,12 @@ async function pool<T, R>(
 
 /**
  * Construye el dataset Roboflow en memoria:
- *   {split}/{nivel_slug}/{id}.jpg  ← una entrada por foto
- *   {split}/_classes.csv           ← filename,class por split
- *   metadata.jsonl                 ← una línea por foto con datos extra
+ *   {split}/{nivel_slug}/{id}_{i}.jpg  ← una entrada por FOTO (1..N por obs)
+ *   {split}/_classes.csv               ← filename,class por split
+ *   metadata.jsonl                     ← una línea por FOTO con datos extra
+ *
+ * Las observaciones multifoto generan N entradas con sufijo `_1`, `_2`, …
+ * Todas comparten la misma `label`/`level`/anotaciones (el árbol es el mismo).
  *
  * Persiste `training_split` en la DB para las observaciones que aún no lo
  * tenían, garantizando que re-exports respetan la asignación previa.
@@ -107,12 +110,14 @@ export async function buildRoboflowExport(
 
   log("Leyendo observaciones revisadas (accepted | corrected)…");
   const rows = (await sql`
-    SELECT id, created_at, lat, lng, accuracy, photo_url, level, label, confidence,
+    SELECT id, created_at, lat, lng, accuracy, photo_urls, level, label, confidence,
            tree_species, tree_species_common, ai_notes,
-           human_review_status, human_level, reviewer_notes, training_split, image_hash
+           human_review_status, human_level, reviewer_notes, training_split, image_hashes
     FROM observations
     WHERE human_review_status IN ('accepted', 'corrected')
-      AND image_hash IS NOT NULL
+      AND image_hashes IS NOT NULL
+      AND array_length(image_hashes, 1) > 0
+      AND array_length(photo_urls, 1) > 0
     ORDER BY created_at ASC
   `) as unknown as Row[];
 
@@ -140,46 +145,74 @@ export async function buildRoboflowExport(
     }
   }
 
-  // Descargar fotos en paralelo controlado.
-  log(`Descargando ${rows.length} fotos (concurrencia ${concurrency})…`);
-  type DLResult =
-    | { row: Row; split: TrainingSplit; data: Buffer; level: 0 | 1 | 2 | 3 | 4 }
-    | { row: Row; error: string };
+  // Expandir cada observación en una entrada por foto (multifoto = N entradas
+  // con el mismo split/level/anotaciones, sufijo `_i` en el filename).
+  type PhotoEntry = { row: Row; photoIdx: number; photoUrl: string };
+  const photoEntries: PhotoEntry[] = rows.flatMap((row) =>
+    row.photo_urls.map((photoUrl, photoIdx) => ({ row, photoIdx, photoUrl })),
+  );
 
-  const results: DLResult[] = await pool(rows, concurrency, async (row) => {
-    try {
-      const split = (row.training_split ?? splitFromId(row.id)) as TrainingSplit;
-      const level = effectiveLevel(row);
-      const res = await fetch(row.photo_url);
-      if (!res.ok) {
-        return { row, error: `HTTP ${res.status} en ${row.photo_url}` };
+  log(
+    `Descargando ${photoEntries.length} fotos de ${rows.length} observaciones (concurrencia ${concurrency})…`,
+  );
+  type DLResult =
+    | {
+        row: Row;
+        photoIdx: number;
+        split: TrainingSplit;
+        data: Buffer;
+        level: 0 | 1 | 2 | 3 | 4;
       }
-      const data = Buffer.from(await res.arrayBuffer());
-      return { row, split, data, level };
-    } catch (e) {
-      return { row, error: e instanceof Error ? e.message : String(e) };
-    }
-  });
+    | { row: Row; photoIdx: number; error: string };
+
+  const results: DLResult[] = await pool(
+    photoEntries,
+    concurrency,
+    async ({ row, photoIdx, photoUrl }) => {
+      try {
+        const split = (row.training_split ?? splitFromId(row.id)) as TrainingSplit;
+        const level = effectiveLevel(row);
+        const res = await fetch(photoUrl);
+        if (!res.ok) {
+          return { row, photoIdx, error: `HTTP ${res.status} en ${photoUrl}` };
+        }
+        const data = Buffer.from(await res.arrayBuffer());
+        return { row, photoIdx, split, data, level };
+      } catch (e) {
+        return {
+          row,
+          photoIdx,
+          error: e instanceof Error ? e.message : String(e),
+        };
+      }
+    },
+  );
 
   const ok = results.filter(
     (r): r is Extract<DLResult, { data: Buffer }> => "data" in r,
   );
   const errors = results
     .filter((r): r is Extract<DLResult, { error: string }> => "error" in r)
-    .map((r) => ({ id: r.row.id, error: r.error }));
+    .map((r) => ({
+      id: `${r.row.id}_${r.photoIdx + 1}`,
+      error: r.error,
+    }));
 
   const files: ExportFile[] = [];
 
-  // 1) Imágenes
+  // 1) Imágenes — sufijo `_{photoIdx+1}` para diferenciar las fotos de la
+  //    misma observación cuando hay multifoto.
   for (const r of ok) {
     const slug = levelSlug(r.level);
     files.push({
-      path: `${r.split}/${slug}/${r.row.id}.jpg`,
+      path: `${r.split}/${slug}/${r.row.id}_${r.photoIdx + 1}.jpg`,
       data: r.data,
     });
     summary.bySplit[r.split]++;
     summary.byLevel[r.level]++;
   }
+  // summary.total cuenta FOTOS en el dataset (no observaciones), porque cada
+  // foto es una entrada de entrenamiento independiente para el modelo.
   summary.total = ok.length;
   summary.failed = errors.length;
 
@@ -189,7 +222,7 @@ export async function buildRoboflowExport(
     for (const r of ok) {
       if (r.split !== split) continue;
       const slug = levelSlug(r.level);
-      lines.push(`${slug}/${r.row.id}.jpg,${slug}`);
+      lines.push(`${slug}/${r.row.id}_${r.photoIdx + 1}.jpg,${slug}`);
     }
     files.push({
       path: `${split}/_classes.csv`,
@@ -201,10 +234,13 @@ export async function buildRoboflowExport(
   //    pero JSZip no necesita placeholders. Las omitimos: el script las crea
   //    explícitamente con mkdir antes de escribir los files.
 
-  // 4) metadata.jsonl
+  // 4) metadata.jsonl — una línea por foto, con `photo_count` para saber
+  //    cuántas fotos hermanas tiene la misma observación.
   const metaLines = ok.map((r) =>
     JSON.stringify({
       id: r.row.id,
+      photo_index: r.photoIdx + 1, // 1-based
+      photo_count: r.row.photo_urls.length,
       split: r.split,
       effective_level: r.level,
       model_level: r.row.level,
@@ -220,8 +256,8 @@ export async function buildRoboflowExport(
       lng: r.row.lng,
       accuracy: r.row.accuracy,
       created_at: r.row.created_at,
-      image_hash: r.row.image_hash,
-      photo_url: r.row.photo_url,
+      image_hash: r.row.image_hashes?.[r.photoIdx] ?? null,
+      photo_url: r.row.photo_urls[r.photoIdx],
     }),
   );
   files.push({ path: "metadata.jsonl", data: metaLines.join("\n") + "\n" });

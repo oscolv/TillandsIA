@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PhotoCarousel } from "@/components/PhotoCarousel";
 import {
   LEVEL_LABELS,
   type HumanReviewStatus,
@@ -94,13 +95,13 @@ export function ReviewCard({ item, onReviewed }: Props) {
       className={`overflow-hidden border border-[color:var(--caliza)] bg-[color:var(--papel)] ${stateClass}`}
     >
       <div className="grid gap-0 sm:grid-cols-[280px_1fr]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={item.photo_url}
-          alt={`Observación ${item.id}`}
-          className="h-64 w-full object-cover sm:h-full"
-          loading="lazy"
-        />
+        <div className="h-64 w-full overflow-hidden sm:h-full">
+          <PhotoCarousel
+            urls={item.photo_urls}
+            alt={`Observación ${item.id}`}
+            className="h-64 w-full object-cover sm:h-full"
+          />
+        </div>
 
         <div className="flex flex-col gap-3 p-4">
           <header className="flex flex-wrap items-center gap-2">
@@ -114,8 +115,11 @@ export function ReviewCard({ item, onReviewed }: Props) {
                 flag: {item.flag_reasons.join(", ")}
               </span>
             )}
-            {item.image_hash == null && (
+            {(!item.image_hashes || item.image_hashes.length === 0) && (
               <span className="mini-tag">legacy (sin hash)</span>
+            )}
+            {item.photo_urls.length > 1 && (
+              <span className="mini-tag">{item.photo_urls.length} fotos</span>
             )}
           </header>
 

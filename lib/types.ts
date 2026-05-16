@@ -45,12 +45,27 @@ export interface ClassificationResult {
 }
 
 /**
+ * Una foto de una observación, tal como la devuelve `/api/classify` y la
+ * vuelve a enviar el cliente al confirmar.
+ *
+ * `hash` es el sha256 hex de la imagen sanitizada que el modelo vio.
+ * `base64` es la misma imagen en base64 sin prefijo data: — el servidor
+ * recalcula su hash y verifica la coincidencia (defensa cripto contra
+ * sustituciones del cliente).
+ */
+export interface PhotoPayload {
+  base64: string;
+  hash: string;
+}
+
+/**
  * Payload del cliente para registrar una observación tras confirmar el resultado.
  *
  * El cliente NO envía la classification: la lee el servidor del cache de Redis
- * usando `imageHash` como llave. El servidor recalcula sha256 sobre `photoBase64`
- * y verifica que coincide con `imageHash`, con lo que la classification queda
- * atada criptográficamente a la foto que el modelo realmente vio.
+ * usando `combinedHash` como llave (sha256 sobre la concatenación de hashes
+ * individuales, en el orden en que se subieron). El servidor verifica el hash
+ * de cada foto 1:1 y recomputa el combinedHash para que la classification quede
+ * atada criptográficamente a las N fotos que el modelo realmente vio.
  *
  * El servidor rellena: `municipality`, `season_window`, `classifier_version`,
  * `model_version`, `ip_hash`, y `human_review_status = "pending"`.
@@ -59,8 +74,8 @@ export interface NewObservationPayload {
   lat: number;
   lng: number;
   accuracy: number | null;
-  photoBase64: string;
-  imageHash: string; // sha256 hex de la imagen sanitizada, devuelto por /api/classify
+  photos: PhotoPayload[]; // 1–3 fotos del mismo árbol
+  combinedHash: string; // sha256 hex sobre concat(photos[i].hash)
 }
 
 /**
@@ -88,7 +103,7 @@ export interface ReviewItem {
   lat: number;
   lng: number;
   accuracy: number | null;
-  photo_url: string;
+  photo_urls: string[]; // 1–3 fotos del mismo árbol
   level: InfestationLevel;
   label: string;
   confidence: number | null;
@@ -102,7 +117,7 @@ export interface ReviewItem {
   human_level: InfestationLevel | null;
   reviewer_notes: string | null;
   training_split: TrainingSplit | null;
-  image_hash: string | null;
+  image_hashes: string[] | null; // paralelo 1:1 con photo_urls
 }
 
 /**
@@ -116,7 +131,7 @@ export interface PublicObservation {
   lng: number;
   level: InfestationLevel;
   label: string;
-  photo_url: string;
+  photo_urls: string[]; // 1–3 fotos del mismo árbol
   tree_species: string | null;
   tree_species_common: string | null;
   ai_notes: string | null;
