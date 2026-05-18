@@ -318,9 +318,9 @@ export function UploadFlow() {
 
             {state.photos.length === 0 && (
               <p className="text-[0.9rem] leading-relaxed text-[color:var(--corteza)]">
-                Captura el árbol completo, incluyendo el dosel. Después
-                podrás agregar más fotos del mismo árbol si quieres mejorar
-                la identificación.
+                Toma 1–3 fotos del mismo árbol. Te sugerimos una del dosel,
+                una de las hojas y una del tronco, pero el orden no importa
+                y cualquier combinación funciona.
               </p>
             )}
 
