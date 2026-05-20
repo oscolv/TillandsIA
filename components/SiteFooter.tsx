@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandLogo } from "./BrandLogo";
+import { ShareWhatsAppButton } from "./ShareWhatsAppButton";
 
 export function SiteFooter() {
   return (
@@ -65,12 +66,13 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="flex flex-wrap justify-between gap-3 border-t border-[color:var(--caliza)] pt-5 font-mono text-[0.72rem] tracking-[0.02em] text-[color:var(--corteza)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--caliza)] pt-5 font-mono text-[0.72rem] tracking-[0.02em] text-[color:var(--corteza)]">
           <p>
             Ciencia ciudadana del Valle del Mezquital ·{" "}
             <em className="text-[color:var(--tinta)]">Tillandsia recurvata</em>
           </p>
-          <p className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <ShareWhatsAppButton variant="chip" />
             <span>Datos públicos, abiertos y anónimos.</span>
             <Link
               href="/admin/revision"
@@ -79,7 +81,7 @@ export function SiteFooter() {
             >
               Curaduría
             </Link>
-          </p>
+          </div>
         </div>
       </div>
     </footer>
