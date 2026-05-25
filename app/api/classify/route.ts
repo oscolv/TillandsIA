@@ -162,8 +162,13 @@ export async function POST(req: Request) {
 
     // Rechazos: rostros o motivo explícito
     if (result.has_human_face || result.rejection_reason) {
+      const outcome = result.has_human_face
+        ? "rejected_face"
+        : result.is_photograph === false
+          ? "rejected_synthetic"
+          : "rejected_other";
       await recordClassificationEvent({
-        outcome: result.has_human_face ? "rejected_face" : "rejected_other",
+        outcome,
         ipHash: identifier,
         confidence: result.confidence,
         imageHash: eventHash,

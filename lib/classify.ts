@@ -12,7 +12,7 @@ import {
  * Permite filtrar el dataset por iteración del clasificador y comparar la
  * calidad de clasificaciones tras cambios.
  */
-export const CLASSIFIER_VERSION = "1.1";
+export const CLASSIFIER_VERSION = "1.2";
 
 /**
  * Modelo en uso. Si OpenAI cambia el alias, se actualiza esta constante y
@@ -109,6 +109,25 @@ Si la foto es ilegible (muy oscura, borrosa, fuera de foco):
 - \`photo_angle: "insufficient"\`
 - \`rejection_reason: "La foto no es lo suficientemente clara para clasificar."\`
 
+# Sólo fotografías reales — NO NEGOCIABLE
+
+La app es para que ciudadanos suban FOTOS tomadas con la cámara de su celular.
+Si la imagen NO es una fotografía real, establece:
+- \`is_photograph: false\`
+- \`rejection_reason: "La imagen parece ser una ilustración, dibujo, clipart o render, no una fotografía real del árbol. Toma una foto con tu cámara."\`
+
+Señales de imagen NO fotográfica:
+- Fondo transparente (cuadrícula gris/blanca de transparencia visible)
+- Trazo plano, sombras planas, contornos vectoriales, estilo caricatura/cartoon/anime
+- Sombras imposibles, colores saturados artificiales, simetría perfecta del follaje
+- Marcas de agua, logos, texto sobrepuesto
+- Aspecto de renderizado 3D, pintura digital, acuarela o ilustración infantil
+- Screenshot de otra app o captura de pantalla con UI visible
+- Imagen claramente generada por IA (artefactos en hojas/ramas, geometría irreal)
+
+Si tienes duda entre foto real y foto profesional muy editada, prefiere \`is_photograph: true\`.
+Si claramente es generada por IA o dibujada/pintada a mano, \`is_photograph: false\`.
+
 # Multifoto
 
 Cuando recibas varias fotos en el mismo mensaje, todas son del MISMO árbol
@@ -155,6 +174,7 @@ const CLASSIFY_JSON_SCHEMA = {
     "branch_dieback",
     "photo_angle",
     "has_human_face",
+    "is_photograph",
     "rejection_reason",
   ],
   properties: {
@@ -174,9 +194,13 @@ const CLASSIFY_JSON_SCHEMA = {
       enum: ["canopy", "trunk", "mixed", "insufficient"],
     },
     has_human_face: { type: "boolean" },
+    is_photograph: { type: "boolean" },
     rejection_reason: { type: ["string", "null"] },
   },
 };
+
+const SYNTHETIC_REJECTION_REASON =
+  "La imagen parece ser una ilustración, dibujo, clipart o render, no una fotografía real del árbol. Toma una foto con tu cámara.";
 
 let _client: OpenAI | null = null;
 function getClient(): OpenAI {
@@ -279,6 +303,19 @@ export function parseClassification(raw: string): ClassificationResult {
   const branch_dieback = Boolean(o.branch_dieback);
   const infestation_active =
     o.infestation_active === null ? null : Boolean(o.infestation_active);
+  // is_photograph se agregó en CLASSIFIER_VERSION 1.2. Si el modelo no lo
+  // devuelve (respuesta cacheada vieja o fixture incompleta), asumimos true
+  // para no romper el flujo histórico.
+  const is_photograph =
+    o.is_photograph === undefined ? true : Boolean(o.is_photograph);
+
+  // Si el modelo marca la imagen como no-fotográfica pero olvidó llenar
+  // rejection_reason, lo llenamos nosotros — el API route rechaza por
+  // cualquier rejection_reason no-null.
+  let rejection_reason = (o.rejection_reason as string | null) ?? null;
+  if (!is_photograph && !rejection_reason) {
+    rejection_reason = SYNTHETIC_REJECTION_REASON;
+  }
 
   // Derivar flags
   const flag_reasons: FlagReason[] = [];
@@ -306,7 +343,8 @@ export function parseClassification(raw: string): ClassificationResult {
     branch_dieback,
     photo_angle,
     has_human_face,
-    rejection_reason: (o.rejection_reason as string | null) ?? null,
+    is_photograph,
+    rejection_reason,
     flag_reasons,
   };
 }

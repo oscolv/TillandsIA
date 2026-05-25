@@ -12,6 +12,7 @@ const validNivel0 = JSON.stringify({
   branch_dieback: false,
   photo_angle: "canopy",
   has_human_face: false,
+  is_photograph: true,
   rejection_reason: null,
 });
 
@@ -26,6 +27,7 @@ const validNivel3 = JSON.stringify({
   branch_dieback: true,
   photo_angle: "canopy",
   has_human_face: false,
+  is_photograph: true,
   rejection_reason: null,
 });
 
@@ -40,7 +42,39 @@ const faceDetected = JSON.stringify({
   branch_dieback: false,
   photo_angle: "insufficient",
   has_human_face: true,
+  is_photograph: true,
   rejection_reason: "Foto contiene rostros humanos. Toma otra sin personas.",
+});
+
+const syntheticImage = JSON.stringify({
+  level: 0,
+  label: "Sin infestación",
+  confidence: 0.99,
+  tree_species: null,
+  tree_species_common: null,
+  ai_notes:
+    "Imagen ilustrada/clipart de un árbol sobre fondo transparente; no se observan cúmulos de Tillandsia recurvata.",
+  infestation_active: null,
+  branch_dieback: false,
+  photo_angle: "canopy",
+  has_human_face: false,
+  is_photograph: false,
+  rejection_reason: null,
+});
+
+const syntheticImageWithReason = JSON.stringify({
+  level: 0,
+  label: "Sin infestación",
+  confidence: 0.99,
+  tree_species: null,
+  tree_species_common: null,
+  ai_notes: "Dibujo a mano de un árbol; no es una foto.",
+  infestation_active: null,
+  branch_dieback: false,
+  photo_angle: "canopy",
+  has_human_face: false,
+  is_photograph: false,
+  rejection_reason: "La imagen parece un dibujo, no una foto real.",
 });
 
 const lowConfidence = JSON.stringify({
@@ -54,6 +88,7 @@ const lowConfidence = JSON.stringify({
   branch_dieback: false,
   photo_angle: "mixed",
   has_human_face: false,
+  is_photograph: true,
   rejection_reason: null,
 });
 
@@ -68,6 +103,7 @@ const nonTargetHost = JSON.stringify({
   branch_dieback: false,
   photo_angle: "canopy",
   has_human_face: false,
+  is_photograph: true,
   rejection_reason: null,
 });
 
@@ -82,6 +118,7 @@ const postTreatment = JSON.stringify({
   branch_dieback: false,
   photo_angle: "canopy",
   has_human_face: false,
+  is_photograph: true,
   rejection_reason: null,
 });
 
@@ -106,6 +143,41 @@ describe("parseClassification — fixtures válidas", () => {
     const r = parseClassification(faceDetected);
     expect(r.has_human_face).toBe(true);
     expect(r.rejection_reason).toMatch(/rostros humanos/);
+  });
+
+  it("rellena rejection_reason cuando is_photograph=false y el modelo lo omite", () => {
+    const r = parseClassification(syntheticImage);
+    expect(r.is_photograph).toBe(false);
+    expect(r.rejection_reason).toMatch(/ilustración|dibujo|clipart|render/);
+    // Confianza alta NO debe sobrescribir el rechazo
+    expect(r.confidence).toBe(0.99);
+  });
+
+  it("preserva el rejection_reason que el modelo ya envió para imagen sintética", () => {
+    const r = parseClassification(syntheticImageWithReason);
+    expect(r.is_photograph).toBe(false);
+    expect(r.rejection_reason).toBe(
+      "La imagen parece un dibujo, no una foto real.",
+    );
+  });
+
+  it("asume is_photograph=true cuando el campo no viene (compat con CLASSIFIER_VERSION 1.1)", () => {
+    const legacy = JSON.stringify({
+      level: 1,
+      label: "Leve",
+      confidence: 0.8,
+      tree_species: "Prosopis laevigata",
+      tree_species_common: "Mezquite",
+      ai_notes: null,
+      infestation_active: true,
+      branch_dieback: false,
+      photo_angle: "canopy",
+      has_human_face: false,
+      rejection_reason: null,
+    });
+    const r = parseClassification(legacy);
+    expect(r.is_photograph).toBe(true);
+    expect(r.rejection_reason).toBeNull();
   });
 });
 

@@ -70,6 +70,25 @@ Si la foto es ilegible (muy oscura, borrosa, fuera de foco):
 - \`photo_angle: "insufficient"\`
 - \`rejection_reason: "La foto no es lo suficientemente clara para clasificar."\`
 
+# Sólo fotografías reales — NO NEGOCIABLE
+
+La app es para que ciudadanos suban FOTOS tomadas con la cámara de su celular.
+Si la imagen NO es una fotografía real, establece:
+- \`is_photograph: false\`
+- \`rejection_reason: "La imagen parece ser una ilustración, dibujo, clipart o render, no una fotografía real del árbol. Toma una foto con tu cámara."\`
+
+Señales de imagen NO fotográfica:
+- Fondo transparente (cuadrícula gris/blanca de transparencia visible)
+- Trazo plano, sombras planas, contornos vectoriales, estilo caricatura/cartoon/anime
+- Sombras imposibles, colores saturados artificiales, simetría perfecta del follaje
+- Marcas de agua, logos, texto sobrepuesto
+- Aspecto de renderizado 3D, pintura digital, acuarela o ilustración infantil
+- Screenshot de otra app o captura de pantalla con UI visible
+- Imagen claramente generada por IA (artefactos en hojas/ramas, geometría irreal)
+
+Si tienes duda entre foto real y foto profesional muy editada, prefiere \`is_photograph: true\`.
+Si claramente es generada por IA o dibujada/pintada a mano, \`is_photograph: false\`.
+
 # Multifoto
 
 Cuando recibas varias fotos en el mismo mensaje, todas son del MISMO árbol

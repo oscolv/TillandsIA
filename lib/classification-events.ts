@@ -10,13 +10,15 @@ import { CLASSIFIER_VERSION, MODEL_VERSION } from "@/lib/classify";
  *    abandono.
  *  - `rejected_face`: `has_human_face === true` en el output del modelo.
  *  - `rejected_insufficient`: `photo_angle === "insufficient"`.
- *  - `rejected_other`: cualquier `rejection_reason` distinto a face/insufficient.
+ *  - `rejected_synthetic`: `is_photograph === false` (clipart, dibujo, render, etc.).
+ *  - `rejected_other`: cualquier `rejection_reason` distinto a los anteriores.
  *  - `error`: excepción no recuperable en el pipeline (sharp, OpenAI, etc.).
  */
 export type ClassificationOutcome =
   | "classified"
   | "rejected_face"
   | "rejected_insufficient"
+  | "rejected_synthetic"
   | "rejected_other"
   | "error";
 

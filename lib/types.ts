@@ -40,6 +40,7 @@ export interface ClassificationResult {
   branch_dieback: boolean;
   photo_angle: PhotoAngle;
   has_human_face: boolean;
+  is_photograph: boolean;
   rejection_reason: string | null;
   flag_reasons: FlagReason[];
 }
