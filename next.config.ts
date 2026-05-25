@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== "production";
+
 /**
  * Content-Security-Policy.
  *
@@ -9,10 +11,22 @@ import type { NextConfig } from "next";
  *
  * `img-src data:` necesario porque la preview de la cámara usa `blob:` y
  * porque el mapa Leaflet renderiza pins SVG embebidos como data URI.
+ *
+ * En dev se omite `upgrade-insecure-requests`: cuando entras al dev server
+ * por LAN (ej. `10.1.113.1:3000` desde el celular) el navegador reescribe
+ * todos los subrecursos a `https://`, que el dev server no habla, y la
+ * página queda sin CSS/JS. Desde `localhost` no se nota porque el navegador
+ * lo trata como seguro y no fuerza la promoción.
  */
-const csp = [
+// React en dev usa eval() para reconstruir stack traces y Turbopack lo necesita
+// para HMR; en prod nunca se invoca eval().
+const scriptSrc = isDev
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+  : "script-src 'self' 'unsafe-inline'";
+
+const cspDirectives = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  scriptSrc,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data: https://*.public.blob.vercel-storage.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
   "font-src 'self' data:",
@@ -24,16 +38,22 @@ const csp = [
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
-  "upgrade-insecure-requests",
-].join("; ");
+];
+if (!isDev) cspDirectives.push("upgrade-insecure-requests");
+const csp = cspDirectives.join("; ");
 
 const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },
-  // HSTS: forzar HTTPS por 1 año, incluyendo subdominios
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=31536000; includeSubDomains",
-  },
+  // HSTS solo en prod — en dev por LAN un HSTS por error podría dejar la IP
+  // marcada como "solo HTTPS" en el navegador hasta que expire.
+  ...(isDev
+    ? []
+    : [
+        {
+          key: "Strict-Transport-Security",
+          value: "max-age=31536000; includeSubDomains",
+        },
+      ]),
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
