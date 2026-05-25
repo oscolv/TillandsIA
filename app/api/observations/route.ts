@@ -17,7 +17,7 @@ import {
   hashImage,
 } from "@/lib/classification-cache";
 import type { FlagReason, InfestationLevel, PublicObservation } from "@/lib/types";
-import { desc, eq, gte, sql } from "drizzle-orm";
+import { desc, eq, gte, ne, sql } from "drizzle-orm";
 import { LEVEL_LABELS } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -259,7 +259,9 @@ export async function GET(req: Request) {
   const levelParam = url.searchParams.get("level");
   const since = url.searchParams.get("since");
 
-  const conditions = [];
+  // Ocultar del mapa público las observaciones rechazadas por moderación humana.
+  // La fila y los blobs se conservan para auditoría y dataset negativo.
+  const conditions = [ne(observations.humanReviewStatus, "rejected")];
   if (levelParam !== null) {
     const lv = Number.parseInt(levelParam, 10);
     if (lv >= 0 && lv <= 4) conditions.push(eq(observations.level, lv));
