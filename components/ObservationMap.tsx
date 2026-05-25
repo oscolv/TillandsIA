@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PhotoCarousel } from "./PhotoCarousel";
 import type { InfestationLevel, PublicObservation } from "@/lib/types";
+import { VALLE_BBOX } from "@/lib/validate-coords";
 
 // Centro del Valle del Mezquital (aprox. Ixmiquilpan)
 const DEFAULT_CENTER: [number, number] = [20.48, -99.22];
 const DEFAULT_ZOOM = 10;
+const FOCUS_ZOOM = 16;
 
 // Color semáforo por nivel
 const LEVEL_COLOR: Record<InfestationLevel, string> = {
@@ -49,13 +51,43 @@ function levelIcon(level: InfestationLevel): L.DivIcon {
   });
 }
 
-function FlyToFirst({ obs }: { obs: PublicObservation[] }) {
+/**
+ * Encuadre inicial del mapa.
+ *
+ * - Con `focusId` (al venir de publicar): flyTo al pin con zoom alto.
+ * - Sin focus: encuadra el bbox del Valle del Mezquital (zona objetivo del
+ *   proyecto y donde está la inmensa mayoría de datos). NO se hace fitBounds
+ *   sobre todas las observaciones porque puntos legítimos fuera de zona
+ *   (flag `out_of_bbox`) ensanchan el viewport y sacan al usuario de la
+ *   región relevante.
+ */
+function FitView({
+  obs,
+  focusId,
+}: {
+  obs: PublicObservation[];
+  focusId?: string | null;
+}) {
   const map = useMap();
+  const done = useRef(false);
   useEffect(() => {
-    if (obs.length === 0) return;
-    const bounds = L.latLngBounds(obs.map((o) => [o.lat, o.lng]));
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-  }, [obs, map]);
+    if (done.current) return;
+    if (focusId) {
+      const target = obs.find((o) => o.id === focusId);
+      if (target) {
+        map.flyTo([target.lat, target.lng], FOCUS_ZOOM, { duration: 0.8 });
+        done.current = true;
+        return;
+      }
+      // focusId desconocido (observación filtrada o borrada): cae al default.
+    }
+    const bounds = L.latLngBounds(
+      [VALLE_BBOX.latMin, VALLE_BBOX.lngMin],
+      [VALLE_BBOX.latMax, VALLE_BBOX.lngMax],
+    );
+    map.fitBounds(bounds, { padding: [20, 20] });
+    done.current = true;
+  }, [obs, focusId, map]);
   return null;
 }
 
@@ -66,9 +98,16 @@ export interface MapFilters {
   municipality?: string | null;
 }
 
-export function ObservationMap({ filters }: { filters?: MapFilters }) {
+export function ObservationMap({
+  filters,
+  focusId,
+}: {
+  filters?: MapFilters;
+  focusId?: string | null;
+}) {
   const [observations, setObservations] = useState<PublicObservation[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const markerRefs = useRef<Map<string, L.Marker>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -86,6 +125,16 @@ export function ObservationMap({ filters }: { filters?: MapFilters }) {
   }, []);
 
   const visible = applyFilters(observations, filters);
+
+  // Tras cargar y filtrar, abrir el popup del pin enfocado (post-publicación).
+  useEffect(() => {
+    if (!focusId || !observations) return;
+    const marker = markerRefs.current.get(focusId);
+    if (!marker) return;
+    // Esperar a que termine flyTo (duración ~0.8s) antes de abrir.
+    const t = setTimeout(() => marker.openPopup(), 900);
+    return () => clearTimeout(t);
+  }, [focusId, observations]);
 
   if (error) {
     return (
@@ -111,12 +160,16 @@ export function ObservationMap({ filters }: { filters?: MapFilters }) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         maxZoom={19}
       />
-      {visible.length > 0 && <FlyToFirst obs={visible} />}
+      <FitView obs={visible} focusId={focusId} />
       {visible.map((o) => (
         <Marker
           key={o.id}
           position={[o.lat, o.lng]}
           icon={levelIcon(o.level)}
+          ref={(ref) => {
+            if (ref) markerRefs.current.set(o.id, ref);
+            else markerRefs.current.delete(o.id);
+          }}
         >
           <Popup minWidth={220}>
             <div className="flex flex-col gap-2">

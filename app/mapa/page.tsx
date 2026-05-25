@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Camera, Filter, X, ChevronDown, Info } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -37,6 +37,13 @@ export default function MapaPage() {
   const [levelFilter, setLevelFilter] = useState<Set<InfestationLevel>>(new Set());
   const [muniFilter, setMuniFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  // ?focus=<id> tras publicar: el mapa hace flyTo al pin y abre su popup.
+  // Solo leemos en mount: cambios de URL posteriores no re-enfocan.
+  const [focusId, setFocusId] = useState<string | null>(null);
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    setFocusId(sp.get("focus"));
+  }, []);
 
   const filters: MapFilters = useMemo(
     () => ({ levels: levelFilter, municipality: muniFilter }),
@@ -155,7 +162,7 @@ export default function MapaPage() {
       </SiteHeader>
 
       <div className="relative flex-1">
-        <ObservationMap filters={filters} />
+        <ObservationMap filters={filters} focusId={focusId} />
         <Legend />
         <Link
           href="/"

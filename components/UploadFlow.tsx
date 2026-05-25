@@ -282,7 +282,8 @@ export function UploadFlow() {
 
       toast.success("¡Observación publicada!");
       dispatch({ type: "DONE" });
-      setTimeout(() => router.push("/mapa"), 1200);
+      const focusParam = data?.id ? `?focus=${encodeURIComponent(data.id)}` : "";
+      setTimeout(() => router.push(`/mapa${focusParam}`), 1200);
     } catch {
       dispatch({ type: "ERROR", error: "Sin conexión al guardar." });
       toast.error("Sin conexión al guardar la observación.");
